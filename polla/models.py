@@ -9,6 +9,20 @@ MAX_JUGADORES_SELECCION = 5
 PUNTOS_POR_GOL = 2
 
 
+def torneo_iniciado() -> bool:
+    """Returns True once the first scheduled match has started."""
+    primer = Partido.objects.filter(fecha__isnull=False).order_by('fecha').first()
+    if not primer:
+        return False
+    return timezone.now() >= primer.fecha
+
+
+def primer_partido_fecha():
+    """Returns the datetime of the first match, or None."""
+    primer = Partido.objects.filter(fecha__isnull=False).order_by('fecha').first()
+    return primer.fecha if primer else None
+
+
 class Fase(models.Model):
     id_fase = models.SmallIntegerField(primary_key=True)
     descripcion = models.CharField(max_length=50)
@@ -88,6 +102,8 @@ class Partido(models.Model):
     penales_local = models.SmallIntegerField(null=True, blank=True)
     penales_visitante = models.SmallIntegerField(null=True, blank=True)
     jugado = models.BooleanField(default=False)
+    # football-data.org match ID for automatic result fetching (optional)
+    fd_match_id = models.IntegerField(null=True, blank=True, verbose_name='football-data.org ID')
 
     class Meta:
         ordering = ['fecha', 'id']
@@ -187,7 +203,8 @@ class PerfilUsuario(models.Model):
 
 class SeleccionJugador(models.Model):
     """A user's selection of up to MAX_JUGADORES_SELECCION players.
-    Each goal scored by these players awards PUNTOS_POR_GOL points."""
+    Each goal scored by these players awards PUNTOS_POR_GOL points.
+    Selection is locked once the first match of the tournament starts."""
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='jugadores_seleccionados')
     jugador = models.ForeignKey(Jugador, on_delete=models.CASCADE, related_name='selecciones')
     puntos_acumulados = models.SmallIntegerField(default=0)
@@ -196,6 +213,14 @@ class SeleccionJugador(models.Model):
         unique_together = ['usuario', 'jugador']
         verbose_name = 'Jugador seleccionado'
         verbose_name_plural = 'Jugadores seleccionados'
+
+    def save(self, *args, **kwargs):
+        # Only allow writes if recalculating points (puntos_acumulados update only on existing records)
+        # or if tournament hasn't started yet
+        if self.pk is None and torneo_iniciado():
+            from django.core.exceptions import ValidationError
+            raise ValidationError('La selección de jugadores está cerrada: el torneo ya inició.')
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.usuario.username} → {self.jugador.nombre_completo}"
@@ -223,6 +248,15 @@ class Pronostico(models.Model):
         if gl < gv:
             return 'V'
         return 'E'
+
+    def save(self, *args, **kwargs):
+        # Block new predictions after match has started; allow updates to points by system
+        if not self.partido.abierto and self.pk is None:
+            from django.core.exceptions import ValidationError
+            raise ValidationError(
+                f'El partido {self.partido} ya inició, no se pueden registrar pronósticos.'
+            )
+        super().save(*args, **kwargs)
 
     def calcular_puntos(self):
         p = self.partido

@@ -5,7 +5,8 @@ from django.contrib import messages
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from .models import (Partido, Pronostico, Pais, Jugador, Fase, PerfilUsuario,
-                     GolPartido, SeleccionJugador, MAX_JUGADORES_SELECCION)
+                     GolPartido, SeleccionJugador, MAX_JUGADORES_SELECCION,
+                     torneo_iniciado, primer_partido_fecha)
 from .forms import ResultadoForm, PerfilForm
 
 
@@ -64,7 +65,11 @@ def pronosticos(request):
         action = request.POST.get('action', 'pronosticos')
 
         if action == 'jugadores':
-            # Save player selection (up to 5)
+            # LOCK: player selection closes when first match starts
+            if torneo_iniciado():
+                messages.error(request, 'La selección de jugadores está cerrada — el torneo ya inició.')
+                return redirect('polla:pronosticos')
+
             ids_raw = request.POST.getlist('jugador_ids')
             try:
                 ids = [int(x) for x in ids_raw if x.strip()]
@@ -75,10 +80,9 @@ def pronosticos(request):
                 messages.error(request, f'Solo puedes seleccionar hasta {MAX_JUGADORES_SELECCION} jugadores.')
             else:
                 jugadores_validos = Jugador.objects.filter(pk__in=ids)
-                # Delete old selections and recreate
                 request.user.jugadores_seleccionados.all().delete()
                 for j in jugadores_validos:
-                    pts = j.total_goles * 2  # recalculate from existing goals
+                    pts = j.total_goles * 2
                     SeleccionJugador.objects.create(usuario=request.user, jugador=j, puntos_acumulados=pts)
                 messages.success(request, f'{len(jugadores_validos)} jugador(es) seleccionado(s).')
             return redirect('polla:pronosticos')
@@ -91,11 +95,13 @@ def pronosticos(request):
                 messages.success(request, 'Pronóstico de campeón guardado.')
             return redirect('polla:pronosticos')
 
-        # Default: save match predictions
+            # Default: save match predictions
         partidos_abiertos = Partido.objects.filter(jugado=False)
         saved = 0
+        omitidos = 0
         for partido in partidos_abiertos:
             if not partido.abierto:
+                omitidos += 1
                 continue
             try:
                 gl = int(request.POST.get(f'gl_{partido.id}', -1))
@@ -115,7 +121,10 @@ def pronosticos(request):
                 saved += 1
             except (ValueError, TypeError):
                 pass
-        messages.success(request, f'{saved} pronóstico(s) guardado(s).')
+        msg = f'{saved} pronóstico(s) guardado(s).'
+        if omitidos:
+            msg += f' ({omitidos} partido(s) ya iniciado(s) no se modificaron.)'
+        messages.success(request, msg)
         return redirect('polla:pronosticos')
 
     partidos_abiertos = Partido.objects.filter(jugado=False).select_related(
@@ -128,6 +137,8 @@ def pronosticos(request):
     # All players grouped by country for the selection UI
     paises_con_jugadores = Pais.objects.prefetch_related('jugadores').order_by('grupo', 'nombre')
     ids_seleccionados = set(s.jugador_id for s in seleccion_actual)
+    jugadores_bloqueados = torneo_iniciado()
+    primer_partido = primer_partido_fecha()
 
     return render(request, 'polla/pronosticos.html', {
         'partidos': partidos_abiertos,
@@ -138,6 +149,8 @@ def pronosticos(request):
         'ids_seleccionados': ids_seleccionados,
         'paises_con_jugadores': paises_con_jugadores,
         'max_jugadores': MAX_JUGADORES_SELECCION,
+        'jugadores_bloqueados': jugadores_bloqueados,
+        'primer_partido': primer_partido,
     })
 
 
@@ -242,6 +255,61 @@ def admin_toggle_usuario(request, pk):
     estado = 'activado' if user.is_active else 'desactivado'
     messages.success(request, f'Usuario "{user.username}" {estado}.')
     return redirect('polla:admin_usuarios')
+
+
+@login_required
+@user_passes_test(_es_admin)
+def admin_fetch_resultado(request, pk):
+    """Fetch result from football-data.org for a single match and apply it."""
+    from .fetch_results import fetch_match_result
+    from django.conf import settings
+
+    partido = get_object_or_404(Partido, pk=pk, jugado=False)
+
+    if not getattr(settings, 'FOOTBALL_DATA_API_KEY', ''):
+        messages.error(request, 'No está configurada la API key de football-data.org (FOOTBALL_DATA_API_KEY).')
+        return redirect('polla:admin_resultados')
+
+    if not partido.fd_match_id:
+        messages.error(request, f'El partido {partido} no tiene ID de football-data.org configurado.')
+        return redirect('polla:admin_resultados')
+
+    data = fetch_match_result(partido.fd_match_id)
+    if not data:
+        messages.error(request, f'No se pudo obtener el resultado para {partido} (API no disponible o partido sin terminar).')
+        return redirect('polla:admin_resultados')
+
+    if data.get('status') not in ('FINISHED',):
+        messages.warning(request, f'El partido {partido} aún no ha terminado (estado: {data.get("status")}).')
+        return redirect('polla:admin_resultados')
+
+    if data.get('home') is None:
+        messages.error(request, f'La API no devolvió marcador para {partido}.')
+        return redirect('polla:admin_resultados')
+
+    partido.goles_local = data['home']
+    partido.goles_visitante = data['away']
+    partido.hubo_penales = data.get('hubo_penales', False)
+    partido.penales_local = data.get('pen_home')
+    partido.penales_visitante = data.get('pen_away')
+    partido.jugado = True
+    partido.save()
+
+    for pron in partido.pronosticos.all():
+        pron.puntos = pron.calcular_puntos()
+        pron.save()
+
+    if partido.fase_id == 7 and partido.goles_local is not None:
+        campeon = partido.pais_local if partido.goles_totales_local > partido.goles_totales_visitante else partido.pais_visitante
+        Pais.objects.update(es_campeon=False)
+        campeon.es_campeon = True
+        campeon.save()
+        for perfil in PerfilUsuario.objects.filter(campeon=campeon):
+            perfil.puntos_campeon = 15
+            perfil.save()
+
+    messages.success(request, f'✅ Resultado obtenido automáticamente: {partido} {partido.resultado_str}')
+    return redirect('polla:admin_resultados')
 
 
 @login_required

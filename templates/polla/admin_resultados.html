@@ -172,9 +172,19 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-success w-100 fw-bold">
-          <i class="bi bi-check-lg me-2"></i>Confirmar resultado y goles
-        </button>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-success flex-grow-1 fw-bold">
+            <i class="bi bi-check-lg me-2"></i>Confirmar resultado y goles
+          </button>
+          {% if partido.fd_match_id %}
+          <a href="{% url 'polla:admin_fetch_resultado' partido.pk %}"
+             class="btn btn-outline-info fw-semibold"
+             style="white-space:nowrap;"
+             onclick="return confirm('¿Obtener resultado automático desde football-data.org?')">
+            <i class="bi bi-cloud-download me-1"></i>Auto
+          </a>
+          {% endif %}
+        </div>
       </form>
 
       {% else %}

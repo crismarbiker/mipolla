@@ -287,6 +287,9 @@ html, body {
 .result-form-card { background: var(--c-card); border: 1px solid var(--c-border); border-radius: 16px; padding: 1rem; }
 .result-score-box { font-size: 2rem; font-weight: 900; color: var(--c-gold); text-align: center; }
 
+/* ── Misc utils ────────────────────────────────── */
+.opacity-60 { opacity: .6; }
+
 /* ── Responsive adjustments ────────────────────── */
 @media (max-width: 575px) {
   .page-hero h1 { font-size: 1.2rem; }

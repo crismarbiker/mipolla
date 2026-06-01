@@ -11,4 +11,5 @@ urlpatterns = [
     path('admin/usuarios/', views.admin_usuarios, name='admin_usuarios'),
     path('admin/usuarios/<int:pk>/toggle/', views.admin_toggle_usuario, name='admin_toggle_usuario'),
     path('admin/resultados/', views.admin_resultados, name='admin_resultados'),
+    path('admin/resultados/<int:pk>/fetch/', views.admin_fetch_resultado, name='admin_fetch_resultado'),
 ]
