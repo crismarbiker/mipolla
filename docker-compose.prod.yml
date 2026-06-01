@@ -23,9 +23,18 @@ services:
       DJANGO_SETTINGS_MODULE: core.settings.production
     depends_on:
       - db
+    networks:
+      - default
+      - elcarguero_net
     restart: unless-stopped
 
 volumes:
   postgres_data:
   static_files:
   media_files:
+
+networks:
+  default:
+  elcarguero_net:
+    external: true
+    name: elcarguero_default

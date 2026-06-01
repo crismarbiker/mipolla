@@ -14,3 +14,8 @@ FORCE_SCRIPT_NAME = '/MiPolla'
 
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+
+# Evolution API (WhatsApp) — direct container-to-container via shared Docker network
+EVOLUTION_API_URL = 'http://elcarguero_evolution:8080'
+EVOLUTION_API_KEY = 'superapikey'
+EVOLUTION_INSTANCE = 'elcarguero'

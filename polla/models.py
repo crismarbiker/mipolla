@@ -159,6 +159,7 @@ class PerfilUsuario(models.Model):
     campeon = models.ForeignKey(Pais, on_delete=models.SET_NULL, null=True, blank=True,
                                 related_name='pronosticantes_campeon')
     puntos_campeon = models.SmallIntegerField(default=0)
+    telefono = models.CharField(max_length=20, blank=True, help_text='Formato internacional: 591XXXXXXXX')
 
     class Meta:
         verbose_name = 'Perfil'

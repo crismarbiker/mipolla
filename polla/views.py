@@ -183,35 +183,53 @@ def ranking(request):
 @login_required
 @user_passes_test(_es_admin)
 def admin_usuarios(request):
+    from .whatsapp import generar_password, normalizar_telefono, enviar_credenciales_whatsapp
+    from .models import PerfilUsuario
+
     if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
-        password1 = request.POST.get('password1', '')
-        password2 = request.POST.get('password2', '')
         first_name = request.POST.get('first_name', '').strip()
         last_name = request.POST.get('last_name', '').strip()
-        email = request.POST.get('email', '').strip()
+        telefono_raw = request.POST.get('telefono', '').strip()
+
+        telefono = normalizar_telefono(telefono_raw)
+        nombre_completo = f"{first_name} {last_name}".strip()
 
         error = None
-        if not username:
-            error = 'El nombre de usuario es requerido.'
-        elif User.objects.filter(username=username).exists():
-            error = f'El usuario "{username}" ya existe.'
-        elif password1 != password2:
-            error = 'Las contraseñas no coinciden.'
-        elif len(password1) < 8:
-            error = 'La contraseña debe tener al menos 8 caracteres.'
+        if not first_name:
+            error = 'El nombre es requerido.'
+        elif not telefono or len(telefono) < 8:
+            error = 'Número de teléfono inválido (ingresa el número completo con código de país).'
+        elif User.objects.filter(username=telefono).exists():
+            error = f'Ya existe un usuario con el número {telefono}.'
 
         if error:
             messages.error(request, error)
         else:
+            password = generar_password()
             user = User.objects.create_user(
-                username=username, password=password1,
-                first_name=first_name, last_name=last_name, email=email,
+                username=telefono,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
             )
-            messages.success(request, f'Usuario "{user.get_full_name() or username}" creado exitosamente.')
+            # Save phone in profile
+            perfil = user.perfil
+            perfil.telefono = telefono
+            perfil.save()
+
+            # Send WhatsApp
+            ok, wa_msg = enviar_credenciales_whatsapp(telefono, nombre_completo, telefono, password)
+            if ok:
+                messages.success(request, f'✅ Usuario "{nombre_completo}" creado. {wa_msg}')
+            else:
+                messages.warning(
+                    request,
+                    f'⚠️ Usuario "{nombre_completo}" creado pero no se pudo enviar WhatsApp: {wa_msg} — '
+                    f'Contraseña: <code>{password}</code>'
+                )
             return redirect('polla:admin_usuarios')
 
-    usuarios = User.objects.filter(is_staff=False).order_by('last_name', 'first_name')
+    usuarios = User.objects.filter(is_staff=False).select_related('perfil').order_by('last_name', 'first_name')
     return render(request, 'polla/admin_usuarios.html', {'usuarios': usuarios})
 
 
