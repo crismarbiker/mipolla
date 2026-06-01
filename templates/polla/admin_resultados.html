@@ -5,36 +5,34 @@
 {% block content %}
 <div class="page-hero px-3">
   <h1><i class="bi bi-flag-fill text-success me-2"></i>Ingresar Resultados</h1>
-  <p class="text-muted small mb-0">Registra el marcador y los goles por jugador</p>
+  <p class="text-muted small mb-0">
+    Ingresa cuántos goles marcó cada jugador. El resultado se calcula solo.
+    Autogol = <span class="text-warning fw-bold">-1</span> (suma al rival, no da bonus).
+  </p>
 </div>
 
-<!-- Filter: pending first -->
+<!-- Filter tabs -->
 <div class="px-3 py-2 sticky-top" style="top:56px;background:var(--c-bg);z-index:100;border-bottom:1px solid var(--c-border);">
   <div class="fase-tabs d-flex gap-2 py-1">
     <button class="fase-tab-btn active" onclick="filterFase('all',this)">Todos</button>
     <button class="fase-tab-btn" onclick="filterFase('pending',this)">Pendientes</button>
-    {% for fase in fases %}
-    {% if fase.partidos.all %}
-    <button class="fase-tab-btn" data-fase="{{ fase.id_fase }}" onclick="filterFase('f{{ fase.id_fase }}',this)">
-      {{ fase.descripcion }}
-    </button>
-    {% endif %}
-    {% endfor %}
+    {% for fase in fases %}{% if fase.partidos.all %}
+    <button class="fase-tab-btn" onclick="filterFase('f{{ fase.id_fase }}',this)">{{ fase.descripcion }}</button>
+    {% endif %}{% endfor %}
   </div>
 </div>
 
 <div class="px-3 py-3">
-  {% for fase in fases %}
-  {% if fase.partidos.all %}
+  {% for fase in fases %}{% if fase.partidos.all %}
   <div class="fase-section" data-fase="f{{ fase.id_fase }}">
     <div class="divider-text my-3">{{ fase.descripcion }}</div>
 
     {% for partido in fase.partidos.all %}
     {% with pdata=partidos_con_jugadores|get_item:partido.id %}
     <div class="result-form-card mb-3 partido-card {% if partido.jugado %}jugado{% else %}pendiente{% endif %}"
-         style="{% if partido.jugado %}opacity:.8;{% endif %}">
+         {% if partido.jugado %}style="opacity:.75;"{% endif %}>
 
-      <!-- Status + date -->
+      <!-- Header row -->
       <div class="d-flex align-items-center justify-content-between mb-2">
         {% if partido.jugado %}
         <span class="badge" style="background:rgba(34,197,94,.15);color:#4ade80;">
@@ -45,12 +43,10 @@
           <i class="bi bi-clock me-1"></i>Pendiente
         </span>
         {% endif %}
-        {% if partido.fecha %}
-        <span class="text-muted" style="font-size:.7rem;">{{ partido.fecha|date:"d M · H:i" }}</span>
-        {% endif %}
+        {% if partido.fecha %}<span class="text-muted" style="font-size:.7rem;">{{ partido.fecha|date:"d M · H:i" }}</span>{% endif %}
       </div>
 
-      <!-- Teams display -->
+      <!-- Teams + score display -->
       <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
         <div class="team-block">
           <span class="team-flag" style="font-size:2rem;">{{ partido.pais_local.emoji }}</span>
@@ -65,7 +61,13 @@
           </span>
           {% endif %}
           {% else %}
-          <span class="score-display vs">vs</span>
+          <!-- Live score preview (updated by JS) -->
+          <div class="d-flex align-items-center gap-2">
+            <span class="fw-black text-warning" style="font-size:2rem;line-height:1;" id="score_l_{{ partido.id }}">0</span>
+            <span class="text-muted fw-bold">-</span>
+            <span class="fw-black text-warning" style="font-size:2rem;line-height:1;" id="score_v_{{ partido.id }}">0</span>
+          </div>
+          <span class="text-muted" style="font-size:.65rem;">calculado automáticamente</span>
           {% endif %}
         </div>
         <div class="team-block">
@@ -75,27 +77,65 @@
       </div>
 
       {% if not partido.jugado %}
-      <!-- RESULT FORM -->
+      <!-- ── ENTRY FORM ────────────────────────────────────── -->
       <form method="post" id="form_{{ partido.id }}">
         {% csrf_token %}
         <input type="hidden" name="partido_id" value="{{ partido.id }}">
 
-        <!-- Score -->
-        <div class="d-flex align-items-center gap-3 mb-3">
-          <div class="text-center flex-grow-1">
-            <label class="form-label small">{{ partido.pais_local.nombre|truncatechars:10 }}</label>
-            <input type="number" name="goles_local" min="0" max="20"
-                   class="score-input form-control" placeholder="0" required>
+        <!-- PLAYER GOALS (main entry) -->
+        <div class="mb-3">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <span class="fw-semibold small"><i class="bi bi-person-badge me-1 text-warning"></i>Goles por jugador</span>
+            <span class="text-muted" style="font-size:.7rem;">
+              positivo = gol · <span class="text-warning fw-bold">-1</span> = autogol (suma al rival, no da bonus)
+            </span>
           </div>
-          <div class="dash-sep mt-4">-</div>
-          <div class="text-center flex-grow-1">
-            <label class="form-label small">{{ partido.pais_visitante.nombre|truncatechars:10 }}</label>
-            <input type="number" name="goles_visitante" min="0" max="20"
-                   class="score-input form-control" placeholder="0" required>
+
+          <!-- Search filter -->
+          <input type="text" class="form-control mb-2" placeholder="Filtrar jugador..."
+                 style="font-size:.8rem;"
+                 oninput="filterMatchPlayers(this,'players_{{ partido.id }}')">
+
+          <div id="players_{{ partido.id }}"
+               style="max-height:55vh;overflow-y:auto;background:var(--c-surface);border-radius:12px;padding:.5rem;">
+
+            <!-- Local team -->
+            <div class="section-title px-2 pt-1 mb-1">{{ partido.pais_local.emoji }} {{ partido.pais_local.nombre }}</div>
+            {% for jugador in pdata.jugadores %}{% if jugador.pais_id == partido.pais_local_id %}
+            <div class="player-goal-row d-flex align-items-center gap-2 px-2 py-1 rounded-2 mb-1"
+                 style="font-size:.8rem;" data-nombre="{{ jugador.nombre_completo|lower }}"
+                 data-team="local" data-partido="{{ partido.id }}">
+              <span class="flex-grow-1 text-truncate">{{ jugador.nombre_completo }}</span>
+              <input type="number" name="goles_jugador_{{ jugador.id }}"
+                     min="-1" max="10" placeholder="—"
+                     value="{{ pdata.goles|get_item:jugador.id|default:'' }}"
+                     class="goal-input form-control text-center fw-bold"
+                     data-partido="{{ partido.id }}" data-team="local"
+                     style="width:58px;height:38px;font-size:1rem;background:var(--c-card);border-color:var(--c-border);"
+                     oninput="recalcScore({{ partido.id }})">
+            </div>
+            {% endif %}{% endfor %}
+
+            <!-- Visitor team -->
+            <div class="section-title px-2 pt-2 mb-1">{{ partido.pais_visitante.emoji }} {{ partido.pais_visitante.nombre }}</div>
+            {% for jugador in pdata.jugadores %}{% if jugador.pais_id == partido.pais_visitante_id %}
+            <div class="player-goal-row d-flex align-items-center gap-2 px-2 py-1 rounded-2 mb-1"
+                 style="font-size:.8rem;" data-nombre="{{ jugador.nombre_completo|lower }}"
+                 data-team="visitante" data-partido="{{ partido.id }}">
+              <span class="flex-grow-1 text-truncate">{{ jugador.nombre_completo }}</span>
+              <input type="number" name="goles_jugador_{{ jugador.id }}"
+                     min="-1" max="10" placeholder="—"
+                     value="{{ pdata.goles|get_item:jugador.id|default:'' }}"
+                     class="goal-input form-control text-center fw-bold"
+                     data-partido="{{ partido.id }}" data-team="visitante"
+                     style="width:58px;height:38px;font-size:1rem;background:var(--c-card);border-color:var(--c-border);"
+                     oninput="recalcScore({{ partido.id }})">
+            </div>
+            {% endif %}{% endfor %}
           </div>
         </div>
 
-        <!-- Penalties (knockout only) -->
+        <!-- PENALTIES (knockout only) -->
         {% if partido.es_eliminatoria %}
         <div class="mb-3 p-2 rounded-3" style="background:rgba(0,87,168,.08);border:1px solid rgba(0,87,168,.2);">
           <div class="form-check mb-2">
@@ -103,78 +143,30 @@
                    id="hubo_pen_{{ partido.id }}"
                    onchange="togglePenales({{ partido.id }})">
             <label class="form-check-label small fw-semibold" for="hubo_pen_{{ partido.id }}">
-              <i class="bi bi-bullseye me-1 text-info"></i>Fue a penales
+              <i class="bi bi-bullseye me-1 text-info"></i>El partido fue a penales
             </label>
           </div>
           <div id="pen_inputs_{{ partido.id }}" style="display:none;" class="d-flex align-items-center gap-3">
             <div class="text-center flex-grow-1">
-              <label class="form-label small">Pen. {{ partido.pais_local.nombre|truncatechars:8 }}</label>
-              <input type="number" name="penales_local" min="0" max="30" class="score-input form-control" placeholder="0">
+              <label class="form-label small">{{ partido.pais_local.nombre|truncatechars:10 }}</label>
+              <input type="number" name="penales_local" min="0" max="30"
+                     class="score-input form-control" placeholder="0">
             </div>
             <div class="dash-sep mt-4">-</div>
             <div class="text-center flex-grow-1">
-              <label class="form-label small">Pen. {{ partido.pais_visitante.nombre|truncatechars:8 }}</label>
-              <input type="number" name="penales_visitante" min="0" max="30" class="score-input form-control" placeholder="0">
+              <label class="form-label small">{{ partido.pais_visitante.nombre|truncatechars:10 }}</label>
+              <input type="number" name="penales_visitante" min="0" max="30"
+                     class="score-input form-control" placeholder="0">
             </div>
           </div>
         </div>
         {% endif %}
 
-        <!-- ── GOAL SCORERS ── -->
-        <div class="mb-3">
-          <div class="fw-semibold small mb-2">
-            <i class="bi bi-person-badge me-1 text-warning"></i>
-            Goles por jugador
-            <span class="text-muted fw-normal">(deja en blanco si no marcó)</span>
-          </div>
-
-          <!-- Search filter within this match -->
-          <input type="text" class="form-control mb-2" placeholder="Filtrar jugador..."
-                 style="font-size:.8rem;"
-                 oninput="filterMatchPlayers(this, 'players_{{ partido.id }}')">
-
-          <div id="players_{{ partido.id }}"
-               style="max-height:50vh;overflow-y:auto;background:var(--c-surface);border-radius:12px;padding:.5rem;">
-
-            <!-- Local team -->
-            <div class="section-title px-2 pt-1">{{ partido.pais_local.emoji }} {{ partido.pais_local.nombre }}</div>
-            {% for jugador in pdata.jugadores %}
-            {% if jugador.pais_id == partido.pais_local_id %}
-            <div class="player-goal-row d-flex align-items-center gap-2 px-2 py-1 rounded-2 mb-1"
-                 style="font-size:.8rem;"
-                 data-nombre="{{ jugador.nombre_completo|lower }}">
-              <span class="flex-grow-1">{{ jugador.nombre_completo }}</span>
-              <input type="number" name="goles_jugador_{{ jugador.id }}"
-                     min="0" max="10" placeholder="—"
-                     value="{{ pdata.goles|get_item:jugador.id|default:'' }}"
-                     class="form-control text-center"
-                     style="width:56px;height:36px;font-size:.9rem;font-weight:700;background:var(--c-card);border-color:var(--c-border);">
-            </div>
-            {% endif %}
-            {% endfor %}
-
-            <!-- Visitor team -->
-            <div class="section-title px-2 pt-2">{{ partido.pais_visitante.emoji }} {{ partido.pais_visitante.nombre }}</div>
-            {% for jugador in pdata.jugadores %}
-            {% if jugador.pais_id == partido.pais_visitante_id %}
-            <div class="player-goal-row d-flex align-items-center gap-2 px-2 py-1 rounded-2 mb-1"
-                 style="font-size:.8rem;"
-                 data-nombre="{{ jugador.nombre_completo|lower }}">
-              <span class="flex-grow-1">{{ jugador.nombre_completo }}</span>
-              <input type="number" name="goles_jugador_{{ jugador.id }}"
-                     min="0" max="10" placeholder="—"
-                     value="{{ pdata.goles|get_item:jugador.id|default:'' }}"
-                     class="form-control text-center"
-                     style="width:56px;height:36px;font-size:.9rem;font-weight:700;background:var(--c-card);border-color:var(--c-border);">
-            </div>
-            {% endif %}
-            {% endfor %}
-          </div>
-        </div>
-
+        <!-- Submit row -->
         <div class="d-flex gap-2">
           <button type="submit" class="btn btn-success flex-grow-1 fw-bold">
-            <i class="bi bi-check-lg me-2"></i>Confirmar resultado y goles
+            <i class="bi bi-check-lg me-2"></i>Confirmar
+            (<span id="btn_score_{{ partido.id }}">0-0</span>)
           </button>
           {% if partido.fd_match_id %}
           <a href="{% url 'polla:admin_fetch_resultado' partido.pk %}"
@@ -188,30 +180,26 @@
       </form>
 
       {% else %}
-      <!-- Show registered goals -->
+      <!-- FINISHED: show recorded goals -->
       {% if pdata.goles %}
-      <div class="mt-2 pt-2" style="border-top:1px solid var(--c-border);">
-        <div class="section-title mb-2">Goleadores</div>
-        {% for partido_g in partido.goles.all %}
+      <div class="pt-2" style="border-top:1px solid var(--c-border);">
+        <div class="section-title mb-2">Goleadores registrados</div>
+        {% for gol in partido.goles.all %}
         <div class="d-flex align-items-center gap-2 mb-1" style="font-size:.8rem;">
-          <span>{{ partido_g.jugador.pais.emoji }}</span>
-          <span class="flex-grow-1">{{ partido_g.jugador.nombre_completo }}</span>
-          <span class="fw-bold text-warning">⚽ ×{{ partido_g.cantidad }}</span>
+          <span>{{ gol.jugador.pais.emoji }}</span>
+          <span class="flex-grow-1 text-truncate">{{ gol.jugador.nombre_completo }}</span>
+          {% if gol.cantidad > 0 %}
+          <span class="fw-bold text-warning">⚽ ×{{ gol.cantidad }}</span>
+          {% else %}
+          <span class="fw-bold text-danger">⚽ AG</span>
+          {% endif %}
         </div>
         {% endfor %}
       </div>
       {% endif %}
-
       <!-- Stats -->
       <div class="mt-2 pt-2 d-flex gap-3" style="border-top:1px solid var(--c-border);font-size:.72rem;">
-        <div>
-          <span class="text-muted">Pronósticos: </span>
-          <span class="fw-bold">{{ partido.pronosticos.count }}</span>
-        </div>
-        <div>
-          <span class="text-muted">Exactos: </span>
-          <span class="fw-bold text-success">{{ partido.pronosticos.filter.count }}</span>
-        </div>
+        <span class="text-muted">Pronósticos: <strong>{{ partido.pronosticos.count }}</strong></span>
       </div>
       {% endif %}
 
@@ -219,13 +207,33 @@
     {% endwith %}
     {% endfor %}
   </div>
-  {% endif %}
-  {% endfor %}
+  {% endif %}{% endfor %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+function recalcScore(pid) {
+  let local = 0, visit = 0;
+  document.querySelectorAll(`.goal-input[data-partido="${pid}"]`).forEach(inp => {
+    const val = parseInt(inp.value);
+    if (isNaN(val) || val === 0) return;
+    const team = inp.dataset.team;
+    if (team === 'local') {
+      if (val > 0) local += val;
+      else visit += Math.abs(val);   // own goal → visitor
+    } else {
+      if (val > 0) visit += val;
+      else local += Math.abs(val);   // own goal → local
+    }
+    // Highlight own goals
+    inp.style.color = val < 0 ? '#f59e0b' : '';
+  });
+  document.getElementById(`score_l_${pid}`).textContent = local;
+  document.getElementById(`score_v_${pid}`).textContent = visit;
+  document.getElementById(`btn_score_${pid}`).textContent = `${local}-${visit}`;
+}
+
 function togglePenales(id) {
   const cb = document.getElementById('hubo_pen_' + id);
   document.getElementById('pen_inputs_' + id).style.display = cb.checked ? 'flex' : 'none';
@@ -235,21 +243,22 @@ function filterFase(key, btn) {
   document.querySelectorAll('.fase-tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.querySelectorAll('.fase-section').forEach(s => {
-    if (key === 'all') { s.style.display = ''; return; }
+    if (key === 'all') {
+      s.style.display = '';
+      s.querySelectorAll('.partido-card').forEach(c => c.style.display = '');
+      return;
+    }
     if (key === 'pending') {
-      const hasPending = s.querySelectorAll('.partido-card.pendiente').length > 0;
-      s.style.display = hasPending ? '' : 'none';
       s.querySelectorAll('.partido-card').forEach(c => {
         c.style.display = c.classList.contains('pendiente') ? '' : 'none';
       });
+      const hasPending = [...s.querySelectorAll('.partido-card.pendiente')].length > 0;
+      s.style.display = hasPending ? '' : 'none';
       return;
     }
     s.querySelectorAll('.partido-card').forEach(c => c.style.display = '');
     s.style.display = ('f' + s.dataset.fase === key) ? '' : 'none';
   });
-  if (key === 'all') {
-    document.querySelectorAll('.partido-card').forEach(c => c.style.display = '');
-  }
 }
 
 function filterMatchPlayers(input, containerId) {
@@ -258,5 +267,10 @@ function filterMatchPlayers(input, containerId) {
     row.style.display = (!q || row.dataset.nombre.includes(q)) ? '' : 'none';
   });
 }
+
+// Init live scores for all pending matches on load
+document.querySelectorAll('.goal-input').forEach(inp => {
+  if (inp.value) recalcScore(inp.dataset.partido);
+});
 </script>
 {% endblock %}

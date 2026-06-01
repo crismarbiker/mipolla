@@ -80,8 +80,9 @@ class Jugador(models.Model):
 
     @property
     def total_goles(self):
+        """Count only positive goals (own goals excluded)."""
         from django.db.models import Sum
-        return self.goles_anotados.aggregate(t=Sum('cantidad'))['t'] or 0
+        return self.goles_anotados.filter(cantidad__gt=0).aggregate(t=Sum('cantidad'))['t'] or 0
 
     def __str__(self):
         return f"{self.nombre_completo} ({self.pais.nombre})"
@@ -157,10 +158,12 @@ class GolPartido(models.Model):
         verbose_name_plural = 'Goles en partidos'
 
     def recalcular_bonus_jugador(self):
-        """After saving, update points for all users who selected this player."""
+        """Recalculate selection bonus for this player.
+        Only positive goals count — own goals (cantidad < 0) don't award bonus."""
         from django.db.models import Sum
         total = GolPartido.objects.filter(
-            jugador=self.jugador
+            jugador=self.jugador,
+            cantidad__gt=0,         # own goals excluded
         ).aggregate(t=Sum('cantidad'))['t'] or 0
         SeleccionJugador.objects.filter(jugador=self.jugador).update(
             puntos_acumulados=total * PUNTOS_POR_GOL

@@ -7,7 +7,7 @@ from django.utils import timezone
 from .models import (Partido, Pronostico, Pais, Jugador, Fase, PerfilUsuario,
                      GolPartido, SeleccionJugador, MAX_JUGADORES_SELECCION,
                      torneo_iniciado, primer_partido_fecha)
-from .forms import ResultadoForm, PerfilForm
+from .forms import PerfilForm
 
 
 def _es_admin(user):
@@ -318,60 +318,110 @@ def admin_resultados(request):
     if request.method == 'POST':
         partido_id = request.POST.get('partido_id')
         partido = get_object_or_404(Partido, pk=partido_id)
-        form = ResultadoForm(request.POST, instance=partido)
 
-        if form.is_valid():
-            partido = form.save(commit=False)
-            partido.jugado = True
-            partido.save()
+        # ── 1. Collect player goals from POST ──────────────────────────────
+        jugadores_local = list(Jugador.objects.filter(pais=partido.pais_local))
+        jugadores_visitante = list(Jugador.objects.filter(pais=partido.pais_visitante))
+        ids_local = {j.id for j in jugadores_local}
+        ids_visitante = {j.id for j in jugadores_visitante}
 
-            # Recalculate match prediction points
-            for pron in partido.pronosticos.all():
-                pron.puntos = pron.calcular_puntos()
-                pron.save()
+        goles_local_calc = 0
+        goles_visitante_calc = 0
+        goals_data = {}   # jugador_id → cantidad (signed)
 
-            # Register goals per player
-            # POST contains: goles_jugador_<jugador_id> = cantidad (may be 0 or missing)
-            jugadores_partido = Jugador.objects.filter(
-                Q(pais=partido.pais_local) | Q(pais=partido.pais_visitante)
-            )
-            for jugador in jugadores_partido:
-                key = f'goles_jugador_{jugador.id}'
-                raw = request.POST.get(key, '').strip()
-                if not raw:
-                    continue
-                try:
-                    cantidad = int(raw)
-                except ValueError:
-                    continue
+        for jugador in jugadores_local + jugadores_visitante:
+            raw = request.POST.get(f'goles_jugador_{jugador.id}', '').strip()
+            if not raw:
+                continue
+            try:
+                cantidad = int(raw)
+            except ValueError:
+                continue
+            if cantidad == 0:
+                continue
+            goals_data[jugador.id] = cantidad
+
+            # Own goal (negative) scores for the opponent
+            if jugador.id in ids_local:
                 if cantidad > 0:
-                    gol, _ = GolPartido.objects.update_or_create(
-                        jugador=jugador,
-                        partido=partido,
-                        defaults={'cantidad': cantidad},
-                    )
-                    gol.recalcular_bonus_jugador()
+                    goles_local_calc += cantidad
                 else:
-                    # Remove existing goal record if set to 0
-                    GolPartido.objects.filter(jugador=jugador, partido=partido).delete()
-                    # Recalculate (total may have changed)
-                    fake = GolPartido(jugador=jugador, partido=partido, cantidad=0)
-                    fake.recalcular_bonus_jugador()
+                    goles_visitante_calc += abs(cantidad)  # own goal → visitor
+            else:
+                if cantidad > 0:
+                    goles_visitante_calc += cantidad
+                else:
+                    goles_local_calc += abs(cantidad)      # own goal → local
 
-            # If final, set champion and award points
-            if partido.fase_id == 7 and partido.goles_local is not None:
-                campeon = partido.pais_local if (
-                    partido.goles_totales_local > partido.goles_totales_visitante
-                ) else partido.pais_visitante
-                Pais.objects.update(es_campeon=False)
-                campeon.es_campeon = True
-                campeon.save()
-                for perfil in PerfilUsuario.objects.filter(campeon=campeon):
-                    perfil.puntos_campeon = 15
-                    perfil.save()
+        # ── 2. Handle penalties (knockout rounds only) ──────────────────────
+        hubo_penales = bool(request.POST.get('hubo_penales'))
+        penales_local = None
+        penales_visitante = None
+        if hubo_penales:
+            try:
+                penales_local = int(request.POST.get('penales_local', 0))
+                penales_visitante = int(request.POST.get('penales_visitante', 0))
+            except (ValueError, TypeError):
+                hubo_penales = False
 
-            messages.success(request, f'Resultado guardado: {partido} {partido.resultado_str}')
-            return redirect('polla:admin_resultados')
+        # ── 3. Save match result ─────────────────────────────────────────────
+        partido.goles_local = goles_local_calc
+        partido.goles_visitante = goles_visitante_calc
+        partido.hubo_penales = hubo_penales
+        partido.penales_local = penales_local
+        partido.penales_visitante = penales_visitante
+        partido.jugado = True
+        partido.save()
+
+        # ── 4. Save individual goal records ─────────────────────────────────
+        affected_jugadores = set()
+        for jugador_id, cantidad in goals_data.items():
+            jugador = Jugador.objects.get(pk=jugador_id)
+            GolPartido.objects.update_or_create(
+                jugador=jugador,
+                partido=partido,
+                defaults={'cantidad': cantidad},
+            )
+            affected_jugadores.add(jugador)
+
+        # Remove zeroed-out or blank entries
+        GolPartido.objects.filter(
+            partido=partido
+        ).exclude(jugador_id__in=goals_data.keys()).delete()
+
+        # Recalculate bonus for all affected players
+        for jugador in affected_jugadores:
+            gol_obj = GolPartido.objects.get(jugador=jugador, partido=partido)
+            gol_obj.recalcular_bonus_jugador()
+
+        # Also recalculate for players whose records were removed
+        removed = Jugador.objects.filter(
+            pais__in=[partido.pais_local, partido.pais_visitante]
+        ).exclude(id__in=goals_data.keys())
+        for jugador in removed:
+            # Their total may have changed if we deleted a record; recalculate
+            fake = GolPartido(jugador=jugador, partido=partido, cantidad=0)
+            fake.recalcular_bonus_jugador()
+
+        # ── 5. Recalculate prediction points ────────────────────────────────
+        for pron in partido.pronosticos.all():
+            pron.puntos = pron.calcular_puntos()
+            pron.save()
+
+        # ── 6. Final: set champion ───────────────────────────────────────────
+        if partido.fase_id == 7:
+            campeon = partido.pais_local if (
+                partido.goles_totales_local > partido.goles_totales_visitante
+            ) else partido.pais_visitante
+            Pais.objects.update(es_campeon=False)
+            campeon.es_campeon = True
+            campeon.save()
+            for perfil in PerfilUsuario.objects.filter(campeon=campeon):
+                perfil.puntos_campeon = 15
+                perfil.save()
+
+        messages.success(request, f'Resultado guardado: {partido} {partido.resultado_str}')
+        return redirect('polla:admin_resultados')
 
     fases = Fase.objects.prefetch_related(
         'partidos__pais_local',
