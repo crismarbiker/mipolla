@@ -146,6 +146,34 @@ class Partido(models.Model):
         return f"{self.pais_local} vs {self.pais_visitante}"
 
 
+class TorneoConfig(models.Model):
+    """Singleton: tournament branding config editable from the admin panel."""
+    nombre = models.CharField(max_length=120, default='Mi Polla')
+    temporada = models.CharField(max_length=30, default='2026', help_text='Ej: 2026, Copa América 2024')
+    logo = models.ImageField(upload_to='torneo/', null=True, blank=True,
+                             help_text='Logo del torneo (recomendado: fondo transparente, PNG)')
+    color_primario = models.CharField(max_length=7, default='#6366f1',
+                                      help_text='Color principal en hex, ej: #6366f1')
+    color_secundario = models.CharField(max_length=7, default='#10b981',
+                                        help_text='Color secundario en hex')
+
+    class Meta:
+        verbose_name = 'Configuración del torneo'
+        verbose_name_plural = 'Configuración del torneo'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # enforce singleton
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return f"{self.nombre} {self.temporada}"
+
+
 class GolPartido(models.Model):
     """Goals scored by a player in a specific match."""
     jugador = models.ForeignKey(Jugador, on_delete=models.CASCADE, related_name='goles_anotados')

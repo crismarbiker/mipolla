@@ -9,19 +9,17 @@
 </div>
 
 <!-- Tab nav -->
-<div class="px-3 py-2 sticky-top" style="top:56px;background:var(--c-bg);z-index:100;border-bottom:1px solid var(--c-border);">
-  <div class="d-flex gap-2">
-    <button class="fase-tab-btn active" onclick="showTab('tab-partidos',this)">
-      <i class="bi bi-calendar3 me-1"></i>Partidos
-    </button>
-    <button class="fase-tab-btn" onclick="showTab('tab-jugadores',this)">
-      <i class="bi bi-person-badge me-1"></i>Mis Jugadores
-      <span class="badge ms-1" style="background:rgba(240,192,64,.2);color:#f0c040;">{{ seleccion_actual|length }}/{{ max_jugadores }}</span>
-    </button>
-    <button class="fase-tab-btn" onclick="showTab('tab-campeon',this)">
-      <i class="bi bi-trophy me-1"></i>Campeón
-    </button>
-  </div>
+<div class="px-3 py-2 sticky-top d-flex tab-pills" style="top:var(--nav-h);background:var(--bg);z-index:100;border-bottom:1px solid var(--border);">
+  <button class="tab-pill active" onclick="showTab('tab-partidos',this)">
+    <i class="bi bi-calendar3 me-1"></i>Partidos
+  </button>
+  <button class="tab-pill" onclick="showTab('tab-jugadores',this)">
+    <i class="bi bi-person-badge me-1"></i>Jugadores
+    <span class="badge badge-gold ms-1">{{ seleccion_actual|length }}/{{ max_jugadores }}</span>
+  </button>
+  <button class="tab-pill" onclick="showTab('tab-campeon',this)">
+    <i class="bi bi-trophy me-1"></i>Campeón
+  </button>
 </div>
 
 <!-- ============================================================
@@ -245,9 +243,14 @@
     {% csrf_token %}
     <input type="hidden" name="action" value="jugadores">
 
-    <div class="mb-3">
+    <div class="search-wrap mb-3">
+      <i class="bi bi-search search-icon"></i>
       <input type="text" id="player-search" class="form-control"
-             placeholder="🔍 Buscar por nombre o país..." autocomplete="off" oninput="filterPlayers()">
+             placeholder="Buscar jugador (ej: Messi, Ronaldo, Vinicius...)"
+             autocomplete="off" oninput="filterPlayers()" spellcheck="false">
+      <button type="button" class="search-clear" onclick="clearSearch()">
+        <i class="bi bi-x-lg"></i>
+      </button>
     </div>
 
     <div class="mb-2 d-flex justify-content-between align-items-center">
@@ -267,25 +270,23 @@
           {{ pais.emoji }} {{ pais.nombre }} — Grupo {{ pais.letra_grupo }}
         </div>
         {% for jugador in pais.jugadores.all %}
-        <label class="player-row d-flex align-items-center gap-3 p-2 rounded-3 mb-1"
-               style="cursor:pointer;border:1px solid transparent;transition:all .15s;"
-               data-nombre="{{ jugador.nombre_completo|lower }}"
-               data-pais="{{ pais.nombre|lower }}">
+        {# data-search: name only (no position) + country, lowercased for JS search #}
+        {% with nombre_raw=jugador.nombre_completo %}
+        <label class="player-row mb-1"
+               data-search="{{ nombre_raw|lower }} {{ pais.nombre|lower }}">
           <input type="checkbox" name="jugador_ids" value="{{ jugador.id }}"
-                 class="player-cb form-check-input flex-shrink-0"
-                 style="width:20px;height:20px;accent-color:#7c3aed;"
+                 class="player-cb"
                  {% if jugador.id in ids_seleccionados %}checked{% endif %}
                  onchange="updatePlayerCount()">
-          <div class="flex-grow-1">
-            <div style="font-size:.82rem;font-weight:500;">{{ jugador.nombre_completo }}</div>
-            <div style="font-size:.68rem;color:var(--c-muted);">{{ pais.nombre }}</div>
+          <div class="flex-grow-1 min-w-0">
+            <div class="player-name">{{ nombre_raw }}</div>
+            <div class="player-country">{{ pais.nombre }}</div>
           </div>
           {% if jugador.total_goles > 0 %}
-          <span class="badge" style="background:rgba(34,197,94,.15);color:#4ade80;font-size:.65rem;">
-            ⚽ {{ jugador.total_goles }}
-          </span>
+          <span class="badge badge-success">⚽ {{ jugador.total_goles }}</span>
           {% endif %}
         </label>
+        {% endwith %}
         {% endfor %}
       </div>
       {% endif %}
@@ -332,51 +333,70 @@
 
 {% block extra_js %}
 <script>
-// Tab switching
+// ── Tab switching ─────────────────────────────────
 function showTab(id, btn) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('d-none'));
-  document.querySelectorAll('.fase-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pill').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.remove('d-none');
   btn.classList.add('active');
 }
 
-// Player selection counter and validation
+// ── Normalize string: remove accents, lowercase ──
+function norm(s) {
+  return (s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+}
+
+// ── Strip position in parentheses from player name ──
+// e.g. "Lionel Messi (Delantero)" → "lionel messi"
+function stripPos(s) {
+  return norm(s).replace(/\(.*?\)/g, '').trim();
+}
+
+// ── Player count & max enforcement ──────────────
 function updatePlayerCount() {
   const max = {{ max_jugadores }};
   const cbs = document.querySelectorAll('.player-cb');
-  const checked = [...cbs].filter(c => c.checked);
-  document.getElementById('selected-count').textContent = checked.length;
+  const n = [...cbs].filter(c => c.checked).length;
+  const el = document.getElementById('selected-count');
+  if (el) el.textContent = n;
+  cbs.forEach(cb => { cb.disabled = !cb.checked && n >= max; });
+}
 
-  if (checked.length >= max) {
-    cbs.forEach(cb => { if (!cb.checked) cb.disabled = true; });
-  } else {
-    cbs.forEach(cb => { cb.disabled = false; });
+// ── Player search (robust) ───────────────────────
+function filterPlayers() {
+  const raw = document.getElementById('player-search').value;
+  const q = norm(raw).trim();
+
+  if (!q) {
+    document.querySelectorAll('.player-row').forEach(r => r.style.display = '');
+    document.querySelectorAll('.pais-group').forEach(g => g.style.display = '');
+    return;
   }
 
-  // Highlight selected rows
-  document.querySelectorAll('.player-row').forEach(row => {
-    const cb = row.querySelector('.player-cb');
-    row.style.background = cb.checked ? 'rgba(124,58,237,.15)' : '';
-    row.style.borderColor = cb.checked ? 'rgba(124,58,237,.4)' : 'transparent';
-  });
-}
+  // Split query into tokens for multi-word matching (e.g. "lionel mess")
+  const tokens = q.split(/\s+/).filter(Boolean);
 
-// Player search filter
-function filterPlayers() {
-  const q = document.getElementById('player-search').value.toLowerCase().trim();
   document.querySelectorAll('.player-row').forEach(row => {
-    const nombre = row.dataset.nombre || '';
-    const pais = row.dataset.pais || '';
-    row.style.display = (!q || nombre.includes(q) || pais.includes(q)) ? '' : 'none';
+    // data-search contains "full name (position) country" already lowercased
+    const searchStr = stripPos(row.dataset.search || '') + ' ' + norm(row.dataset.search || '');
+    const matches = tokens.every(token => searchStr.includes(token));
+    row.style.display = matches ? '' : 'none';
   });
-  // Hide empty pais groups
+
+  // Hide groups with no visible players
   document.querySelectorAll('.pais-group').forEach(g => {
-    const visible = [...g.querySelectorAll('.player-row')].some(r => r.style.display !== 'none');
-    g.style.display = visible ? '' : 'none';
+    const hasVisible = [...g.querySelectorAll('.player-row')].some(r => r.style.display !== 'none');
+    g.style.display = hasVisible ? '' : 'none';
   });
 }
 
-// Init on load
+function clearSearch() {
+  document.getElementById('player-search').value = '';
+  filterPlayers();
+  document.getElementById('player-search').focus();
+}
+
+// Init
 updatePlayerCount();
 </script>
 {% endblock %}

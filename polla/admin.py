@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Fase, Estadio, Pais, Jugador, Partido, Pronostico, PerfilUsuario, GolPartido, SeleccionJugador
+from .models import (Fase, Estadio, Pais, Jugador, Partido, Pronostico,
+                     PerfilUsuario, GolPartido, SeleccionJugador, TorneoConfig)
 
 
 @admin.register(Fase)
@@ -62,3 +63,14 @@ class SeleccionJugadorAdmin(admin.ModelAdmin):
     list_display = ['usuario', 'jugador', 'puntos_acumulados']
     list_filter = ['jugador__pais']
     search_fields = ['usuario__username', 'jugador__nombre_completo']
+
+
+@admin.register(TorneoConfig)
+class TorneoConfigAdmin(admin.ModelAdmin):
+    list_display = ['nombre', 'temporada', 'color_primario']
+
+    def has_add_permission(self, request):
+        return not TorneoConfig.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False

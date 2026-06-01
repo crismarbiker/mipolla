@@ -4,51 +4,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#050d1a">
-  <title>Iniciar sesión — Mi Polla 2026</title>
+  <meta name="theme-color" content="#08080f">
+  <title>{{ torneo.nombre }} {{ torneo.temporada }} — Ingresar</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/polla.css' %}">
-  <style>
-    body { background: radial-gradient(ellipse at top, #0d2244 0%, #050d1a 70%); }
-    .flag-stripe { height: 4px; background: linear-gradient(90deg, #b22234 33.3%, #0057a8 33.3% 66.6%, #006847 66.6%); }
-    .login-card { background: rgba(13,30,53,.9) !important; border: 1px solid #1a3356 !important; backdrop-filter: blur(16px); border-radius: 20px !important; }
-    .host-flags { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 1.5rem; }
-  </style>
+  <style>:root { --primary: {{ torneo.color_primario }}; --primary-dim: {{ torneo.color_primario }}26; --primary-glow: {{ torneo.color_primario }}59; }</style>
 </head>
-<body class="d-flex flex-column align-items-center justify-content-center min-vh-100 px-3">
+<body class="login-page d-flex align-items-center justify-content-center px-3" style="min-height:100dvh;">
 
-<!-- Stripe top -->
-<div class="flag-stripe position-fixed top-0 start-0 end-0" style="z-index:999;"></div>
+<div style="width:100%;max-width:380px;">
 
-<div style="max-width:400px;width:100%;">
-
-  <!-- Logo area -->
-  <div class="text-center mb-4">
-    <div style="font-size:4.5rem;filter:drop-shadow(0 4px 20px rgba(240,192,64,.5));line-height:1;">⚽</div>
-    <h1 class="fw-black mt-2 mb-0" style="font-size:2rem;letter-spacing:-1px;">
-      Mi<span class="text-warning">Polla</span>
-    </h1>
-    <div class="d-flex align-items-center justify-content-center gap-2 mt-1">
-      <span style="color:#b22234;font-weight:800;font-size:1.1rem;">USA</span>
-      <span class="text-muted">·</span>
-      <span style="color:#0057a8;font-weight:800;font-size:1.1rem;">CANADA</span>
-      <span class="text-muted">·</span>
-      <span style="color:#006847;font-weight:800;font-size:1.1rem;">MÉXICO</span>
-    </div>
-    <div class="host-flags mt-2">🇺🇸 🇨🇦 🇲🇽</div>
-    <p class="text-muted small mt-1 mb-0">FIFA World Cup 2026</p>
+  {# Tournament branding #}
+  <div class="text-center mb-5">
+    {% if torneo.logo %}
+    <img src="{{ torneo.logo.url }}" alt="{{ torneo.nombre }}" style="max-height:80px;max-width:260px;object-fit:contain;" class="mb-3">
+    {% else %}
+    <div style="font-size:4rem;line-height:1;filter:drop-shadow(0 4px 16px var(--primary-glow));margin-bottom:.5rem;">⚽</div>
+    {% endif %}
+    <h1 class="fw-black mb-1" style="font-size:1.7rem;letter-spacing:-.5px;">{{ torneo.nombre }}</h1>
+    <p class="text-muted mb-0" style="font-size:.85rem;">{{ torneo.temporada }}</p>
+    <div class="brand-stripe mx-auto mt-3" style="width:48px;"></div>
   </div>
 
-  <!-- Login card -->
-  <div class="login-card card shadow-lg">
+  {# Login card #}
+  <div class="login-card card">
     <div class="card-body p-4">
-      <h5 class="fw-bold mb-4 text-center">Inicia sesión</h5>
+      <h2 class="fw-bold mb-1" style="font-size:1.1rem;">Iniciar sesión</h2>
+      <p class="text-muted mb-4" style="font-size:.78rem;">Solo participantes registrados</p>
 
       {% if form.errors %}
-      <div class="alert py-2 small border-0 mb-3" style="background:rgba(178,34,52,.15);color:#f87171;border-radius:10px;">
-        <i class="bi bi-exclamation-triangle me-1"></i>Usuario o contraseña incorrectos.
+      <div class="alert alert-danger py-2 mb-3">
+        <i class="bi bi-exclamation-circle me-1"></i>Usuario o contraseña incorrectos.
       </div>
       {% endif %}
 
@@ -57,34 +45,29 @@
         <div class="mb-3">
           <label class="form-label">Usuario</label>
           <div class="input-group">
-            <span class="input-group-text" style="background:rgba(255,255,255,.04);border-color:#1a3356;">
-              <i class="bi bi-person text-muted"></i>
-            </span>
-            <input type="text" name="username" autocomplete="username"
-                   class="form-control" placeholder="Tu usuario" autofocus required>
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            <input type="text" name="username" class="form-control"
+                   placeholder="Tu número o usuario" autofocus required autocomplete="username">
           </div>
         </div>
         <div class="mb-4">
           <label class="form-label">Contraseña</label>
           <div class="input-group">
-            <span class="input-group-text" style="background:rgba(255,255,255,.04);border-color:#1a3356;">
-              <i class="bi bi-lock text-muted"></i>
-            </span>
-            <input type="password" name="password" autocomplete="current-password"
-                   class="form-control" placeholder="••••••••" required>
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            <input type="password" name="password" class="form-control"
+                   placeholder="••••••••" required autocomplete="current-password">
           </div>
         </div>
-        <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold" style="border-radius:14px;">
-          <i class="bi bi-box-arrow-in-right me-2"></i>Entrar al torneo
+        <button type="submit" class="btn btn-primary w-100 btn-lg">
+          <i class="bi bi-box-arrow-in-right"></i>Entrar
         </button>
       </form>
     </div>
   </div>
 
-  <p class="text-center text-muted mt-3" style="font-size:.75rem;">
-    <i class="bi bi-lock-fill me-1"></i>Acceso solo por invitación
+  <p class="text-center mt-3" style="font-size:.72rem;color:var(--muted);">
+    <i class="bi bi-lock-fill me-1"></i>Acceso por invitación. Contacta al administrador.
   </p>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

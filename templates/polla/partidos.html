@@ -8,17 +8,13 @@
 </div>
 
 <!-- Fase filter tabs -->
-<div class="px-3 py-2 sticky-top" style="top:56px;background:var(--c-bg);z-index:100;border-bottom:1px solid var(--c-border);">
-  <div class="fase-tabs d-flex gap-2 py-1">
-    <button class="fase-tab-btn active" data-fase="all" onclick="filterFase('all',this)">Todos</button>
-    {% for fase in fases %}
-    {% if fase.partidos.all %}
-    <button class="fase-tab-btn" data-fase="{{ fase.id_fase }}" onclick="filterFase('{{ fase.id_fase }}',this)">
-      {{ fase.descripcion }}
-    </button>
-    {% endif %}
-    {% endfor %}
-  </div>
+<div class="px-3 py-2 sticky-top d-flex tab-pills" style="top:var(--nav-h);background:var(--bg);z-index:100;border-bottom:1px solid var(--border);">
+  <button class="tab-pill active" data-fase="all" onclick="filterFase('all',this)">Todos</button>
+  {% for fase in fases %}{% if fase.partidos.all %}
+  <button class="tab-pill" data-fase="{{ fase.id_fase }}" onclick="filterFase('{{ fase.id_fase }}',this)">
+    {{ fase.descripcion }}
+  </button>
+  {% endif %}{% endfor %}
 </div>
 
 <div class="px-3 py-3" id="partidos-container">
