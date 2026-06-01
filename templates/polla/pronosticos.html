@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% load polla_extras %}
+{% block title %}Mis Pronósticos — Mi Polla 2026{% endblock %}
+
+{% block content %}
+<div class="page-hero px-3">
+  <h1><i class="bi bi-pencil-square text-warning me-2"></i>Mis Pronósticos</h1>
+  <p class="text-muted small mb-0">Puedes cambiar mientras el partido no haya comenzado</p>
+</div>
+
+<form method="post" id="pronosticos-form">
+  {% csrf_token %}
+
+  <!-- Campeón y Goleador -->
+  <div class="px-3 pt-3 pb-2">
+    <div class="section-title">Pronósticos especiales</div>
+    <div class="card mb-3" style="border-color:rgba(240,192,64,.3) !important;">
+      <div class="card-body p-3">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span style="font-size:1.5rem;">🏆</span>
+          <div>
+            <div class="fw-bold">Campeón del Mundial</div>
+            <div class="text-muted small">Acierto = <span class="text-warning fw-bold">+15 puntos</span></div>
+          </div>
+          {% if perfil.campeon %}
+          <span class="ms-auto">{{ perfil.campeon.emoji }} {{ perfil.campeon.nombre }}</span>
+          {% endif %}
+        </div>
+        {{ perfil_form.campeon }}
+
+        <hr class="my-3" style="border-color:var(--c-border);">
+
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <span style="font-size:1.5rem;">👟</span>
+          <div>
+            <div class="fw-bold">Goleador del Mundial</div>
+            <div class="text-muted small">Acierto = <span class="text-warning fw-bold">+10 puntos</span></div>
+          </div>
+          {% if perfil.goleador %}
+          <span class="ms-auto small text-muted">{{ perfil.goleador.nombre_completo }}</span>
+          {% endif %}
+        </div>
+        {{ perfil_form.goleador }}
+      </div>
+    </div>
+
+    <!-- Reglas de puntuación -->
+    <div class="card mb-3" style="background:rgba(13,30,53,.5) !important;border-color:rgba(26,51,86,.8) !important;">
+      <div class="card-body p-3">
+        <div class="fw-semibold mb-2 small"><i class="bi bi-info-circle text-warning me-2"></i>Tabla de puntos</div>
+        <div class="d-flex flex-column gap-1" style="font-size:.78rem;">
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Resultado exacto</span>
+            <span class="fw-bold text-success">+3 pts</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Ganador/empate correcto</span>
+            <span class="fw-bold text-warning">+1 pt</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted">Penales: aciertas si hay/no hay</span>
+            <span class="fw-bold" style="color:#60a5fa;">+2 pts</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="text-muted" style="font-size:.7rem;">* El marcador total incluye penales (ej. 1-1 + pen 4-3 = 5-4)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Partidos abiertos -->
+  {% if partidos %}
+  <div class="px-3 pb-3">
+    <div class="section-title">Partidos disponibles ({{ partidos|length }})</div>
+
+    {% for partido in partidos %}
+    <div class="score-input-wrap mb-3">
+      <!-- Match header -->
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="badge" style="background:rgba(0,104,71,.2);color:#4ade80;font-size:.6rem;">
+          {{ partido.fase.descripcion }}
+        </span>
+        {% if partido.fecha %}
+        <span class="text-muted" style="font-size:.7rem;">
+          <i class="bi bi-calendar3 me-1"></i>{{ partido.fecha|date:"d M · H:i" }}
+        </span>
+        {% endif %}
+      </div>
+
+      <!-- Teams + inputs -->
+      <div class="d-flex align-items-center gap-2">
+        <!-- Local -->
+        <div class="team-block flex-shrink-0" style="min-width:56px;">
+          <span class="team-flag" style="font-size:2.2rem;">{{ partido.pais_local.emoji }}</span>
+          <span class="team-name" style="max-width:64px;">{{ partido.pais_local.nombre }}</span>
+        </div>
+
+        <!-- Inputs -->
+        <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-center">
+          <input type="number" name="gl_{{ partido.id }}" min="0" max="20"
+                 class="score-input form-control"
+                 value="{% with pron=user_pronosticos|get_item:partido.id %}{% if pron %}{{ pron.goles_local }}{% endif %}{% endwith %}"
+                 placeholder="0">
+          <span class="dash-sep">-</span>
+          <input type="number" name="gv_{{ partido.id }}" min="0" max="20"
+                 class="score-input form-control"
+                 value="{% with pron=user_pronosticos|get_item:partido.id %}{% if pron %}{{ pron.goles_visitante }}{% endif %}{% endwith %}"
+                 placeholder="0">
+        </div>
+
+        <!-- Visitante -->
+        <div class="team-block flex-shrink-0" style="min-width:56px;">
+          <span class="team-flag" style="font-size:2.2rem;">{{ partido.pais_visitante.emoji }}</span>
+          <span class="team-name" style="max-width:64px;">{{ partido.pais_visitante.nombre }}</span>
+        </div>
+      </div>
+
+      <!-- Penalty option (only elimination rounds) -->
+      {% if partido.es_eliminatoria %}
+      <div class="mt-2 pt-2 d-flex align-items-center gap-2" style="border-top:1px solid var(--c-border);">
+        <label class="pen-toggle d-flex align-items-center gap-2 mb-0">
+          <input type="checkbox" name="pen_{{ partido.id }}"
+                 {% with pron=user_pronosticos|get_item:partido.id %}{% if pron and pron.predice_penales %}checked{% endif %}{% endwith %}>
+          <span style="font-size:.78rem;color:#60a5fa;">
+            <i class="bi bi-bullseye me-1"></i>Predigo que habrá <strong>penales</strong>
+            <span class="ms-1" style="font-size:.7rem;color:var(--c-muted);">(+2 pts si aciertas)</span>
+          </span>
+        </label>
+      </div>
+      {% endif %}
+
+      <!-- Current prediction display -->
+      {% with pron=user_pronosticos|get_item:partido.id %}
+      {% if pron %}
+      <div class="mt-1" style="font-size:.7rem;color:var(--c-muted);">
+        <i class="bi bi-check2-circle me-1 text-success"></i>
+        Guardado: <strong class="text-warning">{{ pron.goles_local }}-{{ pron.goles_visitante }}</strong>
+        {% if pron.predice_penales %}<span class="ms-1 text-info">+ penales</span>{% endif %}
+      </div>
+      {% endif %}
+      {% endwith %}
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-gold btn-lg w-100 mt-2">
+      <i class="bi bi-save2 me-2"></i>Guardar todos los pronósticos
+    </button>
+  </div>
+  {% else %}
+  <div class="px-3 py-5 text-center">
+    <div style="font-size:3rem;">⏳</div>
+    <p class="text-muted mt-2">No hay partidos disponibles para pronosticar ahora.</p>
+    <a href="{% url 'polla:partidos' %}" class="btn btn-outline-secondary mt-2">Ver todos los partidos</a>
+  </div>
+  {% endif %}
+
+</form>
+{% endblock %}

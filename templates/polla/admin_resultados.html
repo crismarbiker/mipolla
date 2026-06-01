@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block title %}Ingresar Resultados — Admin{% endblock %}
+
+{% block content %}
+<div class="page-hero px-3">
+  <h1><i class="bi bi-flag-fill text-success me-2"></i>Ingresar Resultados</h1>
+  <p class="text-muted small mb-0">Solo el administrador puede ingresar resultados oficiales</p>
+</div>
+
+<div class="px-3 py-3">
+
+  <!-- Pendientes primero -->
+  {% for fase in fases %}
+  {% if fase.partidos.all %}
+  <div class="mb-4">
+    <div class="divider-text my-3">{{ fase.descripcion }}</div>
+
+    {% for partido in fase.partidos.all %}
+    <div class="result-form-card mb-3 {% if partido.jugado %}opacity-75{% endif %}">
+
+      <!-- Status header -->
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        {% if partido.jugado %}
+        <span class="badge" style="background:rgba(34,197,94,.15);color:#4ade80;">
+          <i class="bi bi-check-circle me-1"></i>Finalizado
+        </span>
+        {% else %}
+        <span class="badge" style="background:rgba(245,158,11,.15);color:#fbbf24;">
+          <i class="bi bi-clock me-1"></i>Pendiente
+        </span>
+        {% endif %}
+        {% if partido.fecha %}
+        <span class="text-muted" style="font-size:.7rem;">{{ partido.fecha|date:"d M · H:i" }}</span>
+        {% endif %}
+      </div>
+
+      <!-- Teams -->
+      <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+        <div class="team-block">
+          <span class="team-flag" style="font-size:2rem;">{{ partido.pais_local.emoji }}</span>
+          <span class="team-name fw-bold">{{ partido.pais_local.nombre }}</span>
+        </div>
+        <div class="score-block">
+          {% if partido.jugado %}
+          <div class="result-score-box">{{ partido.goles_local }}-{{ partido.goles_visitante }}</div>
+          {% if partido.hubo_penales %}
+          <span class="badge" style="background:rgba(0,87,168,.2);color:#60a5fa;font-size:.65rem;">
+            <i class="bi bi-bullseye me-1"></i>Pen. {{ partido.penales_local }}-{{ partido.penales_visitante }}
+          </span>
+          {% endif %}
+          {% else %}
+          <span class="score-display vs">vs</span>
+          {% endif %}
+        </div>
+        <div class="team-block">
+          <span class="team-flag" style="font-size:2rem;">{{ partido.pais_visitante.emoji }}</span>
+          <span class="team-name fw-bold">{{ partido.pais_visitante.nombre }}</span>
+        </div>
+      </div>
+
+      <!-- Result input form -->
+      {% if not partido.jugado %}
+      <form method="post" id="form_{{ partido.id }}">
+        {% csrf_token %}
+        <input type="hidden" name="partido_id" value="{{ partido.id }}">
+
+        <!-- Regular score -->
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="text-center flex-grow-1">
+            <label class="form-label small">{{ partido.pais_local.nombre|truncatechars:10 }}</label>
+            <input type="number" name="goles_local" min="0" max="20" class="score-input form-control" placeholder="0" required>
+          </div>
+          <div class="dash-sep mt-4">-</div>
+          <div class="text-center flex-grow-1">
+            <label class="form-label small">{{ partido.pais_visitante.nombre|truncatechars:10 }}</label>
+            <input type="number" name="goles_visitante" min="0" max="20" class="score-input form-control" placeholder="0" required>
+          </div>
+        </div>
+
+        <!-- Penalties (only elimination) -->
+        {% if partido.es_eliminatoria %}
+        <div id="pen_section_{{ partido.id }}" class="mb-3 p-2 rounded-3" style="background:rgba(0,87,168,.08);border:1px solid rgba(0,87,168,.2);">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="hubo_penales" id="hubo_pen_{{ partido.id }}"
+                   onchange="togglePenales({{ partido.id }})">
+            <label class="form-check-label small fw-semibold" for="hubo_pen_{{ partido.id }}">
+              <i class="bi bi-bullseye me-1 text-info"></i>El partido fue a penales
+            </label>
+          </div>
+          <div id="pen_inputs_{{ partido.id }}" class="d-flex align-items-center gap-3" style="display:none !important;">
+            <div class="text-center flex-grow-1">
+              <label class="form-label small">Pen. {{ partido.pais_local.nombre|truncatechars:8 }}</label>
+              <input type="number" name="penales_local" min="0" max="30" class="score-input form-control" placeholder="0">
+            </div>
+            <div class="dash-sep mt-4">-</div>
+            <div class="text-center flex-grow-1">
+              <label class="form-label small">Pen. {{ partido.pais_visitante.nombre|truncatechars:8 }}</label>
+              <input type="number" name="penales_visitante" min="0" max="30" class="score-input form-control" placeholder="0">
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <button type="submit" class="btn btn-success w-100 fw-bold">
+          <i class="bi bi-check-lg me-2"></i>Confirmar resultado
+        </button>
+      </form>
+      {% else %}
+      <!-- Show pronóstico stats for this match -->
+      <div class="mt-2 pt-2" style="border-top:1px solid var(--c-border);">
+        <div class="d-flex gap-3 text-center" style="font-size:.7rem;">
+          {% with total=partido.pronosticos.count exact=partido.pronosticos.filter.pts3 %}
+          <div>
+            <div class="fw-bold text-success">{{ partido.pronosticos.all|length }}</div>
+            <div class="text-muted">pronosticaron</div>
+          </div>
+          {% endwith %}
+          <div>
+            <div class="fw-bold text-warning">{{ partido.goles_local }}-{{ partido.goles_visitante }}</div>
+            <div class="text-muted">resultado</div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endfor %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePenales(id) {
+  const cb = document.getElementById('hubo_pen_' + id);
+  const div = document.getElementById('pen_inputs_' + id);
+  div.style.display = cb.checked ? 'flex' : 'none';
+}
+</script>
+{% endblock %}

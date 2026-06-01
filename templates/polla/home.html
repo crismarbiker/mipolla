@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static polla_extras %}
+{% block title %}Inicio — Mi Polla 2026{% endblock %}
+
+{% block content %}
+<!-- Hero banner -->
+<div class="page-hero px-3 pb-3" style="background:linear-gradient(135deg,#0d2244 0%,#050d1a 100%);border-bottom:1px solid #1a3356;">
+  <div class="d-flex align-items-center gap-3">
+    <div style="font-size:3rem;filter:drop-shadow(0 0 16px rgba(240,192,64,.5));line-height:1;">⚽</div>
+    <div>
+      <h1 class="fw-black mb-0" style="font-size:1.5rem;">Mi<span class="text-warning">Polla</span> Mundial</h1>
+      <div class="d-flex align-items-center gap-2 mt-1">
+        <span style="color:#b22234;font-weight:700;font-size:.8rem;">USA</span>
+        <span class="text-muted">·</span>
+        <span style="color:#0057a8;font-weight:700;font-size:.8rem;">CANADA</span>
+        <span class="text-muted">·</span>
+        <span style="color:#006847;font-weight:700;font-size:.8rem;">MÉXICO</span>
+        <span class="badge ms-1" style="background:linear-gradient(90deg,#b22234,#0057a8,#006847);font-size:.6rem;">2026</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="px-3 py-3">
+
+  <!-- Quick stats -->
+  <div class="row g-2 mb-4">
+    <div class="col-6">
+      <div class="stat-card">
+        <div class="stat-num text-warning">{{ user.pronosticos.count }}</div>
+        <div class="stat-label">mis pronósticos</div>
+      </div>
+    </div>
+    <div class="col-6">
+      <div class="stat-card">
+        <div class="stat-num" style="color:#22c55e;">
+          {% with total=user.pronosticos.all %}
+          {{ total|length }}
+          {% endwith %}
+        </div>
+        <div class="stat-label">partidos jugados</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mi posición en ranking -->
+  {% if user_pos %}
+  <div class="mb-4 p-3 rounded-4 d-flex align-items-center gap-3"
+       style="background:rgba(240,192,64,.08);border:1px solid rgba(240,192,64,.3);">
+    <span style="font-size:2rem;">🏆</span>
+    <div>
+      <div class="text-warning fw-bold" style="font-size:1.1rem;">Posición #{{ user_pos }}</div>
+      <div class="text-muted small">en el ranking general</div>
+    </div>
+    <a href="{% url 'polla:ranking' %}" class="btn btn-outline-gold btn-sm ms-auto">Ver ranking</a>
+  </div>
+  {% endif %}
+
+  <!-- Próximos partidos -->
+  {% if proximos %}
+  <div class="mb-4">
+    <div class="section-title">Próximos partidos</div>
+    {% for partido in proximos %}
+    <div class="match-card mb-2 fase-grupos">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="badge" style="background:rgba(0,104,71,.2);color:#4ade80;font-size:.6rem;">
+          {{ partido.fase.descripcion }}
+        </span>
+        {% if partido.fecha %}
+        <span class="text-muted" style="font-size:.72rem;">
+          <i class="bi bi-calendar3 me-1"></i>{{ partido.fecha|date:"d M · H:i" }}
+        </span>
+        {% endif %}
+        {% if partido.id in user_pronosticos %}
+        <span class="badge" style="background:rgba(34,197,94,.15);color:#4ade80;">
+          <i class="bi bi-check2 me-1"></i>Pronosticado
+        </span>
+        {% else %}
+        <a href="{% url 'polla:pronosticos' %}" class="badge text-decoration-none"
+           style="background:rgba(240,192,64,.15);color:#f0c040;">
+          <i class="bi bi-pencil me-1"></i>Pronosticar
+        </a>
+        {% endif %}
+      </div>
+      <div class="d-flex align-items-center justify-content-between gap-2">
+        <div class="team-block">
+          <span class="team-flag">{{ partido.pais_local.emoji }}</span>
+          <span class="team-name">{{ partido.pais_local.nombre }}</span>
+        </div>
+        <div class="score-block">
+          <span class="score-display vs">vs</span>
+          <span class="phase-badge">Grupo {{ partido.pais_local.letra_grupo }}</span>
+        </div>
+        <div class="team-block">
+          <span class="team-flag">{{ partido.pais_visitante.emoji }}</span>
+          <span class="team-name">{{ partido.pais_visitante.nombre }}</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    <a href="{% url 'polla:partidos' %}" class="btn btn-outline-secondary w-100 mt-1" style="border-radius:12px;font-size:.8rem;">
+      Ver todos los partidos <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Resultados recientes -->
+  {% if recientes %}
+  <div class="mb-4">
+    <div class="section-title">Resultados recientes</div>
+    {% for partido in recientes %}
+    <div class="match-card mb-2">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <span class="badge" style="background:rgba(122,148,180,.1);color:#7a94b4;font-size:.6rem;">
+          {{ partido.fase.descripcion }}
+        </span>
+        {% if partido.fecha %}
+        <span class="text-muted" style="font-size:.72rem;">{{ partido.fecha|date:"d M" }}</span>
+        {% endif %}
+      </div>
+      <div class="d-flex align-items-center justify-content-between gap-2">
+        <div class="team-block">
+          <span class="team-flag">{{ partido.pais_local.emoji }}</span>
+          <span class="team-name">{{ partido.pais_local.nombre }}</span>
+        </div>
+        <div class="score-block">
+          <span class="score-display">{{ partido.resultado_str }}</span>
+          {% if partido.hubo_penales %}
+          <span class="badge" style="background:rgba(0,87,168,.2);color:#60a5fa;font-size:.6rem;">
+            <i class="bi bi-bullseye me-1"></i>Penales
+          </span>
+          {% endif %}
+        </div>
+        <div class="team-block">
+          <span class="team-flag">{{ partido.pais_visitante.emoji }}</span>
+          <span class="team-name">{{ partido.pais_visitante.nombre }}</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Top 5 ranking -->
+  {% if top_ranking %}
+  <div class="mb-4">
+    <div class="section-title">Top 5 Ranking</div>
+    {% for d in top_ranking %}
+    <div class="rank-row {% if d.usuario == user %}me{% endif %}">
+      <span class="rank-pos {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+        {% if forloop.counter == 1 %}🥇
+        {% elif forloop.counter == 2 %}🥈
+        {% elif forloop.counter == 3 %}🥉
+        {% else %}{{ forloop.counter }}{% endif %}
+      </span>
+      <span class="rank-avatar"
+            style="background:linear-gradient(135deg,{% cycle '#b22234' '#0057a8' '#006847' '#7c3aed' '#0891b2' %},{% cycle '#0057a8' '#006847' '#b22234' '#0891b2' '#7c3aed' %});">
+        {{ d.usuario.first_name|first|upper }}{{ d.usuario.last_name|first|upper }}
+      </span>
+      <div class="rank-info">
+        <div class="rank-name">{{ d.usuario.get_full_name|default:d.usuario.username }}</div>
+        <div class="rank-sub">{{ d.exactos }} exactos · {{ d.acertados }} acertados</div>
+      </div>
+      <span class="rank-pts">{{ d.puntos }}</span>
+    </div>
+    {% endfor %}
+    <a href="{% url 'polla:ranking' %}" class="btn btn-outline-secondary w-100 mt-1" style="border-radius:12px;font-size:.8rem;">
+      Ranking completo <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

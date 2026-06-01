@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load polla_extras %}
+{% block title %}Partidos — Mi Polla 2026{% endblock %}
+
+{% block content %}
+<div class="page-hero px-3">
+  <h1><i class="bi bi-calendar3 text-warning me-2"></i>Partidos</h1>
+</div>
+
+<!-- Fase filter tabs -->
+<div class="px-3 py-2 sticky-top" style="top:56px;background:var(--c-bg);z-index:100;border-bottom:1px solid var(--c-border);">
+  <div class="fase-tabs d-flex gap-2 py-1">
+    <button class="fase-tab-btn active" data-fase="all" onclick="filterFase('all',this)">Todos</button>
+    {% for fase in fases %}
+    {% if fase.partidos.all %}
+    <button class="fase-tab-btn" data-fase="{{ fase.id_fase }}" onclick="filterFase('{{ fase.id_fase }}',this)">
+      {{ fase.descripcion }}
+    </button>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<div class="px-3 py-3" id="partidos-container">
+  {% for fase in fases %}
+  {% if fase.partidos.all %}
+  <div class="fase-section" data-fase="{{ fase.id_fase }}">
+    <div class="divider-text my-3">{{ fase.descripcion }}</div>
+
+    {% for partido in fase.partidos.all %}
+    <div class="match-card mb-2 {% if fase.id_fase == 1 %}fase-grupos{% elif fase.id_fase == 2 %}fase-r32{% elif fase.id_fase == 3 %}fase-r16{% elif fase.id_fase == 4 %}fase-qf{% elif fase.id_fase == 5 or fase.id_fase == 6 %}fase-sf{% elif fase.id_fase == 7 %}fase-final{% endif %}">
+
+      <!-- Header -->
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        {% if partido.fecha %}
+        <span class="text-muted" style="font-size:.7rem;">
+          <i class="bi bi-calendar3 me-1"></i>{{ partido.fecha|date:"d M · H:i" }}
+        </span>
+        {% endif %}
+        {% if partido.estadio %}
+        <span class="text-muted" style="font-size:.7rem;">
+          <i class="bi bi-geo-alt me-1"></i>{{ partido.estadio.nombre|truncatechars:25 }}
+        </span>
+        {% endif %}
+      </div>
+
+      <!-- Teams & score -->
+      <div class="d-flex align-items-center justify-content-between gap-2">
+        <div class="team-block">
+          <span class="team-flag">{{ partido.pais_local.emoji }}</span>
+          <span class="team-name">{{ partido.pais_local.nombre }}</span>
+          {% if fase.id_fase == 1 %}
+          <span style="font-size:.6rem;color:var(--c-muted);">Grupo {{ partido.pais_local.letra_grupo }}</span>
+          {% endif %}
+        </div>
+        <div class="score-block">
+          {% if partido.jugado %}
+          <span class="score-display">{{ partido.goles_local }} - {{ partido.goles_visitante }}</span>
+          {% if partido.hubo_penales %}
+          <span class="badge" style="background:rgba(0,87,168,.2);color:#60a5fa;font-size:.6rem;">
+            Pen. {{ partido.penales_local }}-{{ partido.penales_visitante }}
+          </span>
+          {% endif %}
+          <span class="badge" style="background:rgba(34,197,94,.15);color:#4ade80;font-size:.6rem;">FIN</span>
+          {% else %}
+          <span class="score-display vs">vs</span>
+          {% if not partido.abierto %}
+          <span class="badge" style="background:rgba(245,158,11,.15);color:#fbbf24;font-size:.6rem;">EN JUEGO</span>
+          {% endif %}
+          {% endif %}
+        </div>
+        <div class="team-block">
+          <span class="team-flag">{{ partido.pais_visitante.emoji }}</span>
+          <span class="team-name">{{ partido.pais_visitante.nombre }}</span>
+          {% if fase.id_fase == 1 %}
+          <span style="font-size:.6rem;color:var(--c-muted);">Grupo {{ partido.pais_visitante.letra_grupo }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- User prediction -->
+      {% with pron=user_pronosticos|get_item:partido.id %}
+      {% if pron %}
+      <div class="mt-2 pt-2 d-flex align-items-center gap-2" style="border-top:1px solid var(--c-border);">
+        <i class="bi bi-person-fill text-muted" style="font-size:.8rem;"></i>
+        <span style="font-size:.75rem;color:var(--c-muted);">Tu pronóstico:</span>
+        <span class="fw-bold text-warning" style="font-size:.85rem;">{{ pron.goles_local }} - {{ pron.goles_visitante }}</span>
+        {% if pron.predice_penales %}
+        <span class="badge" style="background:rgba(0,87,168,.2);color:#60a5fa;font-size:.6rem;">
+          <i class="bi bi-bullseye me-1"></i>Penales
+        </span>
+        {% endif %}
+        {% if partido.jugado %}
+        <span class="ms-auto badge pts-{{ pron.puntos }}">
+          {% if pron.puntos > 0 %}+{% endif %}{{ pron.puntos }} pts
+        </span>
+        {% endif %}
+      </div>
+      {% elif partido.abierto %}
+      <div class="mt-2 pt-2 d-flex align-items-center justify-content-between" style="border-top:1px solid var(--c-border);">
+        <span style="font-size:.75rem;color:var(--c-muted);">Sin pronóstico</span>
+        <a href="{% url 'polla:pronosticos' %}" class="btn btn-outline-gold btn-sm py-0" style="font-size:.7rem;">
+          <i class="bi bi-pencil me-1"></i>Pronosticar
+        </a>
+      </div>
+      {% endif %}
+      {% endwith %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterFase(fase, btn) {
+  document.querySelectorAll('.fase-tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.fase-section').forEach(s => {
+    s.style.display = (fase === 'all' || s.dataset.fase === fase) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

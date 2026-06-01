@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Ranking — Mi Polla 2026{% endblock %}
+
+{% block content %}
+<div class="page-hero px-3">
+  <h1><i class="bi bi-trophy-fill text-warning me-2"></i>Ranking</h1>
+  <p class="text-muted small mb-0">{{ datos|length }} participante{% if datos|length != 1 %}s{% endif %}</p>
+</div>
+
+<div class="px-3 py-3">
+
+  <!-- Podium top 3 -->
+  {% if datos|length >= 3 %}
+  <div class="d-flex align-items-end justify-content-center gap-3 mb-4 py-3">
+    <!-- 2nd -->
+    <div class="text-center" style="flex:1;">
+      <div class="rank-avatar mx-auto mb-2" style="width:52px;height:52px;font-size:1.1rem;background:linear-gradient(135deg,#6b7280,#9ca3af);">
+        {{ datos.1.usuario.first_name|first|upper }}{{ datos.1.usuario.last_name|first|upper }}
+      </div>
+      <div style="font-size:2rem;">🥈</div>
+      <div class="fw-bold small">{{ datos.1.usuario.get_full_name|default:datos.1.usuario.username|truncatechars:12 }}</div>
+      <div class="text-warning fw-black" style="font-size:1.2rem;">{{ datos.1.puntos }}</div>
+      <div class="text-muted" style="font-size:.65rem;">pts</div>
+    </div>
+    <!-- 1st -->
+    <div class="text-center" style="flex:1;">
+      <div class="rank-avatar mx-auto mb-2" style="width:64px;height:64px;font-size:1.3rem;background:linear-gradient(135deg,#b22234,#0057a8);box-shadow:0 0 20px rgba(240,192,64,.4);">
+        {{ datos.0.usuario.first_name|first|upper }}{{ datos.0.usuario.last_name|first|upper }}
+      </div>
+      <div style="font-size:2.5rem;">🥇</div>
+      <div class="fw-bold">{{ datos.0.usuario.get_full_name|default:datos.0.usuario.username|truncatechars:14 }}</div>
+      <div class="text-warning fw-black" style="font-size:1.6rem;">{{ datos.0.puntos }}</div>
+      <div class="text-muted" style="font-size:.65rem;">pts</div>
+    </div>
+    <!-- 3rd -->
+    <div class="text-center" style="flex:1;">
+      <div class="rank-avatar mx-auto mb-2" style="width:52px;height:52px;font-size:1.1rem;background:linear-gradient(135deg,#92400e,#cd7f32);">
+        {{ datos.2.usuario.first_name|first|upper }}{{ datos.2.usuario.last_name|first|upper }}
+      </div>
+      <div style="font-size:2rem;">🥉</div>
+      <div class="fw-bold small">{{ datos.2.usuario.get_full_name|default:datos.2.usuario.username|truncatechars:12 }}</div>
+      <div class="text-warning fw-black" style="font-size:1.2rem;">{{ datos.2.puntos }}</div>
+      <div class="text-muted" style="font-size:.65rem;">pts</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Full ranking list -->
+  <div class="section-title">Tabla completa</div>
+
+  {% for d in datos %}
+  <div class="rank-row {% if d.usuario == request.user %}me{% endif %}">
+    <span class="rank-pos {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
+      {% if forloop.counter == 1 %}🥇
+      {% elif forloop.counter == 2 %}🥈
+      {% elif forloop.counter == 3 %}🥉
+      {% else %}{{ forloop.counter }}{% endif %}
+    </span>
+
+    <span class="rank-avatar"
+          style="background:linear-gradient(135deg,{% cycle '#b22234' '#0057a8' '#006847' '#7c3aed' '#0891b2' '#d97706' '#db2777' '#16a34a' %},{% cycle '#0057a8' '#006847' '#b22234' '#0891b2' '#7c3aed' '#16a34a' '#0891b2' '#d97706' %});">
+      {{ d.usuario.first_name|first|upper }}{{ d.usuario.last_name|first|upper }}
+    </span>
+
+    <div class="rank-info">
+      <div class="rank-name">
+        {{ d.usuario.get_full_name|default:d.usuario.username }}
+        {% if d.usuario == request.user %}
+        <span class="badge ms-1" style="background:rgba(240,192,64,.2);color:#f0c040;font-size:.55rem;">Tú</span>
+        {% endif %}
+      </div>
+      <div class="rank-sub d-flex gap-2 flex-wrap">
+        <span><i class="bi bi-bullseye me-1" style="color:#4ade80;"></i>{{ d.exactos }} exactos</span>
+        <span><i class="bi bi-check2 me-1" style="color:#fbbf24;"></i>{{ d.acertados }} acertados</span>
+        <span class="text-muted">{{ d.jugados }} jugados</span>
+      </div>
+      <!-- Champion & goleador mini -->
+      <div class="d-flex gap-2 mt-1 flex-wrap">
+        {% if d.campeon %}
+        <span style="font-size:.65rem;color:var(--c-muted);">
+          🏆 {{ d.campeon.emoji }} {{ d.campeon.nombre }}
+        </span>
+        {% endif %}
+        {% if d.goleador %}
+        <span style="font-size:.65rem;color:var(--c-muted);">
+          👟 {{ d.goleador.nombre_completo|truncatechars:18 }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="text-end">
+      <div class="rank-pts">{{ d.puntos }}</div>
+      <div class="text-muted" style="font-size:.6rem;">pts</div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="text-center py-5 text-muted">
+    <div style="font-size:3rem;">📊</div>
+    <p class="mt-2">Aún no hay puntuaciones</p>
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

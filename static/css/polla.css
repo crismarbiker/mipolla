@@ -1,0 +1,296 @@
+/* ============================================================
+   MI POLLA MUNDIAL 2026 — Mobile-first · FIFA 2026 Theme
+   Colores: USA 🔴 · Canada 🔵 · Mexico 🟢 · Gold 🟡
+   ============================================================ */
+
+:root {
+  --c-bg:        #050d1a;
+  --c-surface:   #0d1e35;
+  --c-card:      #0f2540;
+  --c-border:    #1a3356;
+  --c-usa:       #b22234;
+  --c-canada:    #0057a8;
+  --c-mexico:    #006847;
+  --c-gold:      #f0c040;
+  --c-gold-soft: #f5d878;
+  --c-text:      #e8f0fe;
+  --c-muted:     #7a94b4;
+  --c-success:   #22c55e;
+  --c-danger:    #ef4444;
+  --c-warn:      #f59e0b;
+  --nav-h:       56px;
+  --bot-nav-h:   64px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100dvh;
+}
+
+/* ── Scrollbar ─────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--c-bg); }
+::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 4px; }
+
+/* ── Top Navbar ────────────────────────────────── */
+#mainNav {
+  background: rgba(5, 13, 26, 0.95) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--c-border);
+  height: var(--nav-h);
+  z-index: 1040;
+}
+
+.navbar-brand { font-size: 1.1rem; letter-spacing: -0.3px; }
+.brand-icon { font-size: 1.3rem; }
+.navbar .nav-link { font-size: 0.875rem; font-weight: 500; color: var(--c-muted) !important; padding: .4rem .7rem !important; border-radius: 8px; transition: all .15s; }
+.navbar .nav-link:hover, .navbar .nav-link.active { color: var(--c-text) !important; background: rgba(255,255,255,.07); }
+.navbar .nav-link.active { color: var(--c-gold) !important; }
+
+/* ── Bottom Mobile Nav ─────────────────────────── */
+.bot-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: var(--bot-nav-h);
+  background: rgba(5, 13, 26, 0.97);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--c-border);
+  z-index: 1050;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.bot-nav-items { display: flex; height: 100%; align-items: stretch; }
+.bot-nav-item {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: var(--c-muted);
+  text-decoration: none;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: .3px;
+  gap: 3px;
+  transition: color .15s;
+  padding-bottom: 2px;
+  border: none; background: none; cursor: pointer;
+}
+.bot-nav-item i { font-size: 1.35rem; line-height: 1; }
+.bot-nav-item.active, .bot-nav-item:active { color: var(--c-gold); }
+.bot-nav-item.active i { text-shadow: 0 0 12px rgba(240,192,64,.5); }
+
+@media (max-width: 991.98px) {
+  .bot-nav { display: block; }
+  #mainNav .navbar-nav { display: none !important; }
+  main.mt-nav { padding-bottom: calc(var(--bot-nav-h) + env(safe-area-inset-bottom) + 8px); }
+}
+
+.mt-nav { padding-top: var(--nav-h); }
+
+/* ── Avatar ────────────────────────────────────── */
+.avatar-sm {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--c-usa), var(--c-canada));
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: .7rem; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+
+/* ── Cards ─────────────────────────────────────── */
+.card {
+  background: var(--c-card) !important;
+  border: 1px solid var(--c-border) !important;
+  border-radius: 16px !important;
+}
+.card-header {
+  background: transparent !important;
+  border-bottom: 1px solid var(--c-border) !important;
+  padding: .875rem 1rem;
+}
+
+/* ── Page header ───────────────────────────────── */
+.page-hero {
+  background: linear-gradient(135deg, var(--c-surface) 0%, #0b1c30 100%);
+  border-bottom: 1px solid var(--c-border);
+  padding: 1.25rem 1rem;
+}
+.page-hero h1 { font-size: 1.4rem; font-weight: 800; margin: 0; }
+
+/* ── Section title ─────────────────────────────── */
+.section-title {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  margin-bottom: .75rem;
+}
+
+/* ── Match Card ────────────────────────────────── */
+.match-card {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+  padding: .875rem 1rem;
+  transition: border-color .2s;
+}
+.match-card:hover { border-color: var(--c-gold); }
+
+.team-block { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.team-flag { font-size: 2rem; line-height: 1; }
+.team-name { font-size: .7rem; font-weight: 600; text-align: center; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70px; }
+
+.score-block { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 4px; }
+.score-display { font-size: 1.75rem; font-weight: 800; letter-spacing: -1px; color: var(--c-gold); line-height: 1; }
+.score-display.vs { font-size: 1rem; color: var(--c-muted); font-weight: 600; }
+.phase-badge { font-size: .6rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--c-muted); }
+
+/* ── Score inputs (pronósticos) ────────────────── */
+.score-input-wrap {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: 16px;
+  padding: 1rem;
+  transition: border-color .2s;
+}
+.score-input-wrap:focus-within { border-color: var(--c-gold); }
+
+.score-input {
+  width: 54px; height: 54px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: var(--c-surface) !important;
+  border: 2px solid var(--c-border) !important;
+  border-radius: 12px !important;
+  color: var(--c-gold) !important;
+  -moz-appearance: textfield;
+}
+.score-input::-webkit-outer-spin-button,
+.score-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.score-input:focus { border-color: var(--c-gold) !important; box-shadow: 0 0 0 3px rgba(240,192,64,.2) !important; outline: none; }
+
+.dash-sep { font-size: 1.5rem; font-weight: 800; color: var(--c-muted); line-height: 1; align-self: center; }
+
+/* ── Penalty toggle ────────────────────────────── */
+.pen-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.pen-toggle input[type="checkbox"] {
+  width: 20px; height: 20px;
+  accent-color: var(--c-canada);
+  cursor: pointer;
+}
+
+/* ── Ranking table ─────────────────────────────── */
+.rank-row {
+  display: flex; align-items: center; gap: .75rem;
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  padding: .75rem 1rem;
+  margin-bottom: .5rem;
+  transition: border-color .15s;
+}
+.rank-row.me { border-color: var(--c-gold); background: rgba(240,192,64,.05); }
+.rank-pos { font-size: 1.1rem; font-weight: 800; color: var(--c-muted); min-width: 28px; text-align: center; }
+.rank-pos.gold { color: var(--c-gold); }
+.rank-pos.silver { color: #c0c0c0; }
+.rank-pos.bronze { color: #cd7f32; }
+.rank-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .85rem; flex-shrink: 0; }
+.rank-info { flex: 1; min-width: 0; }
+.rank-name { font-weight: 600; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rank-sub { font-size: .7rem; color: var(--c-muted); }
+.rank-pts { font-size: 1.3rem; font-weight: 800; color: var(--c-gold); }
+
+/* ── Points badges ─────────────────────────────── */
+.pts-3 { background: rgba(34,197,94,.15); color: #4ade80; }
+.pts-1 { background: rgba(245,158,11,.15); color: #fbbf24; }
+.pts-0 { background: rgba(122,148,180,.1); color: var(--c-muted); }
+.pts-bonus { background: rgba(0,87,168,.2); color: #60a5fa; }
+
+/* ── Fase tabs ─────────────────────────────────── */
+.fase-tabs { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.fase-tabs::-webkit-scrollbar { display: none; }
+.fase-tab-btn {
+  white-space: nowrap;
+  font-size: .75rem;
+  font-weight: 600;
+  padding: .4rem .9rem;
+  border-radius: 20px;
+  border: 1px solid var(--c-border);
+  background: transparent;
+  color: var(--c-muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.fase-tab-btn.active, .fase-tab-btn:hover { background: var(--c-gold); color: #000; border-color: var(--c-gold); }
+
+/* ── Home stats cards ──────────────────────────── */
+.stat-card { background: var(--c-card); border: 1px solid var(--c-border); border-radius: 16px; padding: 1rem; text-align: center; }
+.stat-num { font-size: 2rem; font-weight: 800; line-height: 1; }
+.stat-label { font-size: .7rem; font-weight: 600; color: var(--c-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: .25rem; }
+
+/* ── Forms ─────────────────────────────────────── */
+.form-control, .form-select {
+  background: var(--c-surface) !important;
+  border: 1px solid var(--c-border) !important;
+  color: var(--c-text) !important;
+  border-radius: 10px !important;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--c-canada) !important;
+  box-shadow: 0 0 0 3px rgba(0,87,168,.25) !important;
+}
+.form-label { font-size: .8rem; font-weight: 600; color: var(--c-muted); }
+
+/* ── Buttons ───────────────────────────────────── */
+.btn-gold { background: var(--c-gold); color: #000; border: none; font-weight: 700; border-radius: 12px; }
+.btn-gold:hover { background: var(--c-gold-soft); color: #000; }
+.btn-outline-gold { border: 1.5px solid var(--c-gold); color: var(--c-gold); background: transparent; border-radius: 12px; font-weight: 600; }
+.btn-outline-gold:hover { background: var(--c-gold); color: #000; }
+
+.btn { border-radius: 10px !important; font-weight: 600; }
+.btn-warning { color: #000 !important; font-weight: 700; }
+.btn-lg { padding: .75rem 1.5rem !important; font-size: 1rem !important; }
+
+/* ── Login page ────────────────────────────────── */
+.login-bg {
+  background: radial-gradient(ellipse at top, #0d2244 0%, var(--c-bg) 70%);
+  min-height: 100dvh;
+}
+.login-logo { font-size: 4rem; filter: drop-shadow(0 4px 12px rgba(240,192,64,.4)); }
+
+/* ── Footer ────────────────────────────────────── */
+.footer-bar { background: var(--c-surface); border-top: 1px solid var(--c-border); font-size: .75rem; }
+
+/* ── Pill badge ────────────────────────────────── */
+.badge { font-size: .65rem; font-weight: 700; letter-spacing: .3px; }
+
+/* ── Divider with text ─────────────────────────── */
+.divider-text { display: flex; align-items: center; gap: .75rem; color: var(--c-muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.divider-text::before, .divider-text::after { content: ''; flex: 1; height: 1px; background: var(--c-border); }
+
+/* ── Fase color accents ────────────────────────── */
+.fase-grupos   { border-left: 3px solid var(--c-mexico) !important; }
+.fase-r32      { border-left: 3px solid #0ea5e9 !important; }
+.fase-r16      { border-left: 3px solid var(--c-canada) !important; }
+.fase-qf       { border-left: 3px solid #a855f7 !important; }
+.fase-sf       { border-left: 3px solid var(--c-usa) !important; }
+.fase-final    { border-left: 3px solid var(--c-gold) !important; }
+
+/* ── Admin result form ─────────────────────────── */
+.result-form-card { background: var(--c-card); border: 1px solid var(--c-border); border-radius: 16px; padding: 1rem; }
+.result-score-box { font-size: 2rem; font-weight: 900; color: var(--c-gold); text-align: center; }
+
+/* ── Responsive adjustments ────────────────────── */
+@media (max-width: 575px) {
+  .page-hero h1 { font-size: 1.2rem; }
+  .score-display { font-size: 1.5rem; }
+  .team-flag { font-size: 1.75rem; }
+  .rank-pts { font-size: 1.1rem; }
+}
