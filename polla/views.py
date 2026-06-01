@@ -4,8 +4,9 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
-from .models import Partido, Pronostico, Pais, Jugador, Fase, PerfilUsuario
-from .forms import CrearUsuarioForm, ResultadoForm, PerfilForm
+from .models import (Partido, Pronostico, Pais, Jugador, Fase, PerfilUsuario,
+                     GolPartido, SeleccionJugador, MAX_JUGADORES_SELECCION)
+from .forms import ResultadoForm, PerfilForm
 
 
 def _es_admin(user):
@@ -23,7 +24,6 @@ def home(request):
     ).order_by('-fecha')[:6]
 
     user_pronosticos = set(request.user.pronosticos.values_list('partido_id', flat=True))
-
     top_ranking = _calcular_ranking()[:5]
 
     user_pos = None
@@ -48,9 +48,7 @@ def partidos(request):
         'partidos__pais_visitante',
         'partidos__estadio',
     ).all()
-
     user_pronosticos = {p.partido_id: p for p in request.user.pronosticos.all()}
-
     return render(request, 'polla/partidos.html', {
         'fases': fases,
         'user_pronosticos': user_pronosticos,
@@ -60,10 +58,42 @@ def partidos(request):
 @login_required
 def pronosticos(request):
     perfil, _ = PerfilUsuario.objects.get_or_create(usuario=request.user)
+    seleccion_actual = list(request.user.jugadores_seleccionados.select_related('jugador__pais'))
 
     if request.method == 'POST':
-        # Save match predictions
+        action = request.POST.get('action', 'pronosticos')
+
+        if action == 'jugadores':
+            # Save player selection (up to 5)
+            ids_raw = request.POST.getlist('jugador_ids')
+            try:
+                ids = [int(x) for x in ids_raw if x.strip()]
+            except ValueError:
+                ids = []
+
+            if len(ids) > MAX_JUGADORES_SELECCION:
+                messages.error(request, f'Solo puedes seleccionar hasta {MAX_JUGADORES_SELECCION} jugadores.')
+            else:
+                jugadores_validos = Jugador.objects.filter(pk__in=ids)
+                # Delete old selections and recreate
+                request.user.jugadores_seleccionados.all().delete()
+                for j in jugadores_validos:
+                    pts = j.total_goles * 2  # recalculate from existing goals
+                    SeleccionJugador.objects.create(usuario=request.user, jugador=j, puntos_acumulados=pts)
+                messages.success(request, f'{len(jugadores_validos)} jugador(es) seleccionado(s).')
+            return redirect('polla:pronosticos')
+
+        if action == 'campeon':
+            # Save champion prediction
+            perfil_form = PerfilForm(request.POST, instance=perfil)
+            if perfil_form.is_valid():
+                perfil_form.save()
+                messages.success(request, 'Pronóstico de campeón guardado.')
+            return redirect('polla:pronosticos')
+
+        # Default: save match predictions
         partidos_abiertos = Partido.objects.filter(jugado=False)
+        saved = 0
         for partido in partidos_abiertos:
             if not partido.abierto:
                 continue
@@ -82,39 +112,39 @@ def pronosticos(request):
                         'predice_penales': predice_penales,
                     },
                 )
+                saved += 1
             except (ValueError, TypeError):
                 pass
-
-        # Save profile predictions
-        perfil_form = PerfilForm(request.POST, instance=perfil)
-        if perfil_form.is_valid():
-            perfil_form.save()
-
-        messages.success(request, 'Pronósticos guardados correctamente.')
+        messages.success(request, f'{saved} pronóstico(s) guardado(s).')
         return redirect('polla:pronosticos')
 
     partidos_abiertos = Partido.objects.filter(jugado=False).select_related(
         'pais_local', 'pais_visitante', 'fase'
     ).order_by('fecha')
 
-    user_pronosticos = {p.partido_id: p for p in request.user.pronosticos.filter(
-        partido__jugado=False
-    )}
-
+    user_pronosticos = {p.partido_id: p for p in request.user.pronosticos.filter(partido__jugado=False)}
     perfil_form = PerfilForm(instance=perfil)
+
+    # All players grouped by country for the selection UI
+    paises_con_jugadores = Pais.objects.prefetch_related('jugadores').order_by('grupo', 'nombre')
+    ids_seleccionados = set(s.jugador_id for s in seleccion_actual)
 
     return render(request, 'polla/pronosticos.html', {
         'partidos': partidos_abiertos,
         'user_pronosticos': user_pronosticos,
         'perfil_form': perfil_form,
         'perfil': perfil,
+        'seleccion_actual': seleccion_actual,
+        'ids_seleccionados': ids_seleccionados,
+        'paises_con_jugadores': paises_con_jugadores,
+        'max_jugadores': MAX_JUGADORES_SELECCION,
     })
 
 
 def _calcular_ranking():
     usuarios = User.objects.filter(
         is_active=True, is_staff=False
-    ).prefetch_related('pronosticos', 'perfil')
+    ).prefetch_related('pronosticos', 'perfil', 'jugadores_seleccionados')
 
     datos = []
     for u in usuarios:
@@ -125,18 +155,19 @@ def _calcular_ranking():
 
         qs = u.pronosticos.filter(partido__jugado=True)
         puntos_base = qs.aggregate(t=Sum('puntos'))['t'] or 0
-        exactos = qs.filter(puntos=3).count()
-        acertados = qs.filter(puntos=1).count()
+        exactos = qs.filter(puntos__gte=3).count()
+        acertados = qs.filter(puntos=2).count()
         jugados = qs.count()
+        pts_jugadores = u.jugadores_seleccionados.aggregate(t=Sum('puntos_acumulados'))['t'] or 0
 
         datos.append({
             'usuario': u,
-            'puntos': puntos_base + perfil.puntos_campeon + perfil.puntos_goleador,
+            'puntos': puntos_base + perfil.puntos_campeon + pts_jugadores,
             'exactos': exactos,
             'acertados': acertados,
             'jugados': jugados,
             'campeon': perfil.campeon,
-            'goleador': perfil.goleador,
+            'pts_jugadores': pts_jugadores,
         })
 
     datos.sort(key=lambda x: (-x['puntos'], -x['exactos'], -x['acertados']))
@@ -202,22 +233,50 @@ def admin_resultados(request):
         partido_id = request.POST.get('partido_id')
         partido = get_object_or_404(Partido, pk=partido_id)
         form = ResultadoForm(request.POST, instance=partido)
+
         if form.is_valid():
             partido = form.save(commit=False)
             partido.jugado = True
             partido.save()
 
-            # Recalcular puntos
+            # Recalculate match prediction points
             for pron in partido.pronosticos.all():
                 pron.puntos = pron.calcular_puntos()
                 pron.save()
 
-            # Si es la final, determinar campeón
-            if partido.fase_id == 7 and partido.goles_local is not None:
-                if partido.goles_local > partido.goles_visitante:
-                    campeon = partido.pais_local
+            # Register goals per player
+            # POST contains: goles_jugador_<jugador_id> = cantidad (may be 0 or missing)
+            jugadores_partido = Jugador.objects.filter(
+                Q(pais=partido.pais_local) | Q(pais=partido.pais_visitante)
+            )
+            for jugador in jugadores_partido:
+                key = f'goles_jugador_{jugador.id}'
+                raw = request.POST.get(key, '').strip()
+                if not raw:
+                    continue
+                try:
+                    cantidad = int(raw)
+                except ValueError:
+                    continue
+                if cantidad > 0:
+                    gol, _ = GolPartido.objects.update_or_create(
+                        jugador=jugador,
+                        partido=partido,
+                        defaults={'cantidad': cantidad},
+                    )
+                    gol.recalcular_bonus_jugador()
                 else:
-                    campeon = partido.pais_visitante
+                    # Remove existing goal record if set to 0
+                    GolPartido.objects.filter(jugador=jugador, partido=partido).delete()
+                    # Recalculate (total may have changed)
+                    fake = GolPartido(jugador=jugador, partido=partido, cantidad=0)
+                    fake.recalcular_bonus_jugador()
+
+            # If final, set champion and award points
+            if partido.fase_id == 7 and partido.goles_local is not None:
+                campeon = partido.pais_local if (
+                    partido.goles_totales_local > partido.goles_totales_visitante
+                ) else partido.pais_visitante
                 Pais.objects.update(es_campeon=False)
                 campeon.es_campeon = True
                 campeon.save()
@@ -225,11 +284,30 @@ def admin_resultados(request):
                     perfil.puntos_campeon = 15
                     perfil.save()
 
-            messages.success(request, f'Resultado guardado: {partido} {partido.goles_local}-{partido.goles_visitante}')
+            messages.success(request, f'Resultado guardado: {partido} {partido.resultado_str}')
             return redirect('polla:admin_resultados')
 
     fases = Fase.objects.prefetch_related(
-        'partidos__pais_local', 'partidos__pais_visitante'
+        'partidos__pais_local',
+        'partidos__pais_visitante',
+        'partidos__goles__jugador',
     ).all()
 
-    return render(request, 'polla/admin_resultados.html', {'fases': fases})
+    # Pre-load players per country for the goal entry forms
+    from django.db.models import Prefetch
+    partidos_con_jugadores = {}
+    for fase in fases:
+        for partido in fase.partidos.all():
+            jugadores = list(Jugador.objects.filter(
+                Q(pais=partido.pais_local) | Q(pais=partido.pais_visitante)
+            ).select_related('pais').order_by('pais', 'nombre_completo'))
+            goles_existentes = {g.jugador_id: g.cantidad for g in partido.goles.all()}
+            partidos_con_jugadores[partido.id] = {
+                'jugadores': jugadores,
+                'goles': goles_existentes,
+            }
+
+    return render(request, 'polla/admin_resultados.html', {
+        'fases': fases,
+        'partidos_con_jugadores': partidos_con_jugadores,
+    })

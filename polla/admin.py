@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Fase, Estadio, Pais, Jugador, Partido, Pronostico, PerfilUsuario, GolPartido
+from .models import Fase, Estadio, Pais, Jugador, Partido, Pronostico, PerfilUsuario, GolPartido, SeleccionJugador
 
 
 @admin.register(Fase)
@@ -47,7 +47,7 @@ class PronosticoAdmin(admin.ModelAdmin):
 
 @admin.register(PerfilUsuario)
 class PerfilAdmin(admin.ModelAdmin):
-    list_display = ['usuario', 'campeon', 'goleador', 'puntos_campeon', 'puntos_goleador']
+    list_display = ['usuario', 'campeon', 'puntos_campeon']
     search_fields = ['usuario__username']
 
 
@@ -55,3 +55,10 @@ class PerfilAdmin(admin.ModelAdmin):
 class GolAdmin(admin.ModelAdmin):
     list_display = ['jugador', 'partido', 'cantidad']
     autocomplete_fields = ['jugador']
+
+
+@admin.register(SeleccionJugador)
+class SeleccionJugadorAdmin(admin.ModelAdmin):
+    list_display = ['usuario', 'jugador', 'puntos_acumulados']
+    list_filter = ['jugador__pais']
+    search_fields = ['usuario__username', 'jugador__nombre_completo']

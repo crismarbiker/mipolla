@@ -5,6 +5,9 @@ from django.utils import timezone
 LETRA_GRUPO = {1: 'A', 2: 'B', 3: 'C', 4: 'D', 5: 'E', 6: 'F',
                7: 'G', 8: 'H', 9: 'I', 10: 'J', 11: 'K', 12: 'L'}
 
+MAX_JUGADORES_SELECCION = 5
+PUNTOS_POR_GOL = 2
+
 
 class Fase(models.Model):
     id_fase = models.SmallIntegerField(primary_key=True)
@@ -61,11 +64,16 @@ class Jugador(models.Model):
         verbose_name = 'Jugador'
         verbose_name_plural = 'Jugadores'
 
+    @property
+    def total_goles(self):
+        from django.db.models import Sum
+        return self.goles_anotados.aggregate(t=Sum('cantidad'))['t'] or 0
+
     def __str__(self):
         return f"{self.nombre_completo} ({self.pais.nombre})"
 
 
-FASES_ELIMINACION = {2, 3, 4, 5, 6, 7}  # R32, R16, QF, SF, 3er, Final
+FASES_ELIMINACION = {2, 3, 4, 5, 6, 7}
 
 
 class Partido(models.Model):
@@ -76,7 +84,6 @@ class Partido(models.Model):
     fecha = models.DateTimeField(null=True, blank=True)
     goles_local = models.SmallIntegerField(null=True, blank=True)
     goles_visitante = models.SmallIntegerField(null=True, blank=True)
-    # Solo fase eliminatoria: penales
     hubo_penales = models.BooleanField(default=False)
     penales_local = models.SmallIntegerField(null=True, blank=True)
     penales_visitante = models.SmallIntegerField(null=True, blank=True)
@@ -122,14 +129,36 @@ class Partido(models.Model):
         return f"{self.pais_local} vs {self.pais_visitante}"
 
 
+class GolPartido(models.Model):
+    """Goals scored by a player in a specific match."""
+    jugador = models.ForeignKey(Jugador, on_delete=models.CASCADE, related_name='goles_anotados')
+    partido = models.ForeignKey(Partido, on_delete=models.CASCADE, related_name='goles')
+    cantidad = models.SmallIntegerField(default=1)
+
+    class Meta:
+        unique_together = ['jugador', 'partido']
+        verbose_name = 'Gol en partido'
+        verbose_name_plural = 'Goles en partidos'
+
+    def recalcular_bonus_jugador(self):
+        """After saving, update points for all users who selected this player."""
+        from django.db.models import Sum
+        total = GolPartido.objects.filter(
+            jugador=self.jugador
+        ).aggregate(t=Sum('cantidad'))['t'] or 0
+        SeleccionJugador.objects.filter(jugador=self.jugador).update(
+            puntos_acumulados=total * PUNTOS_POR_GOL
+        )
+
+    def __str__(self):
+        return f"{self.jugador} - {self.partido} ({self.cantidad} gol)"
+
+
 class PerfilUsuario(models.Model):
     usuario = models.OneToOneField(User, on_delete=models.CASCADE, related_name='perfil')
     campeon = models.ForeignKey(Pais, on_delete=models.SET_NULL, null=True, blank=True,
                                 related_name='pronosticantes_campeon')
-    goleador = models.ForeignKey(Jugador, on_delete=models.SET_NULL, null=True, blank=True,
-                                 related_name='pronosticantes_goleador')
     puntos_campeon = models.SmallIntegerField(default=0)
-    puntos_goleador = models.SmallIntegerField(default=0)
 
     class Meta:
         verbose_name = 'Perfil'
@@ -141,11 +170,34 @@ class PerfilUsuario(models.Model):
         return self.usuario.pronosticos.aggregate(t=Sum('puntos'))['t'] or 0
 
     @property
+    def puntos_jugadores(self):
+        from django.db.models import Sum
+        return self.usuario.jugadores_seleccionados.aggregate(
+            t=Sum('puntos_acumulados')
+        )['t'] or 0
+
+    @property
     def puntos_totales(self):
-        return self.puntos_pronosticos + self.puntos_campeon + self.puntos_goleador
+        return self.puntos_pronosticos + self.puntos_campeon + self.puntos_jugadores
 
     def __str__(self):
         return f"Perfil de {self.usuario.username}"
+
+
+class SeleccionJugador(models.Model):
+    """A user's selection of up to MAX_JUGADORES_SELECCION players.
+    Each goal scored by these players awards PUNTOS_POR_GOL points."""
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='jugadores_seleccionados')
+    jugador = models.ForeignKey(Jugador, on_delete=models.CASCADE, related_name='selecciones')
+    puntos_acumulados = models.SmallIntegerField(default=0)
+
+    class Meta:
+        unique_together = ['usuario', 'jugador']
+        verbose_name = 'Jugador seleccionado'
+        verbose_name_plural = 'Jugadores seleccionados'
+
+    def __str__(self):
+        return f"{self.usuario.username} → {self.jugador.nombre_completo}"
 
 
 class Pronostico(models.Model):
@@ -153,7 +205,6 @@ class Pronostico(models.Model):
     partido = models.ForeignKey(Partido, on_delete=models.CASCADE, related_name='pronosticos')
     goles_local = models.SmallIntegerField()
     goles_visitante = models.SmallIntegerField()
-    # Fase eliminatoria: el usuario predice si habrá penales
     predice_penales = models.BooleanField(default=False)
     puntos = models.SmallIntegerField(default=0)
     creado = models.DateTimeField(auto_now_add=True)
@@ -178,18 +229,15 @@ class Pronostico(models.Model):
             return 0
 
         puntos = 0
-
-        # Comparar goles totales (reglamento + penales si los hubo)
         real_gl = p.goles_totales_local
         real_gv = p.goles_totales_visitante
 
         if self.goles_local == real_gl and self.goles_visitante == real_gv:
             puntos += 3
         elif self._signo(self.goles_local, self.goles_visitante) == self._signo(real_gl, real_gv):
-            puntos += 1
+            puntos += 2  # Correct outcome (not exact score): +2 pts
 
-        # Bono penales: solo en eliminatoria.
-        # +2 si acertó si habría penales (o no)
+        # Bonus penales (only knockout rounds): +2 if correctly predicted
         if p.es_eliminatoria:
             if self.predice_penales == p.hubo_penales:
                 puntos += 2
@@ -198,17 +246,3 @@ class Pronostico(models.Model):
 
     def __str__(self):
         return f"{self.usuario.username}: {self.partido} ({self.goles_local}-{self.goles_visitante})"
-
-
-class GolPartido(models.Model):
-    jugador = models.ForeignKey(Jugador, on_delete=models.CASCADE, related_name='goles_anotados')
-    partido = models.ForeignKey(Partido, on_delete=models.CASCADE, related_name='goles')
-    cantidad = models.SmallIntegerField(default=1)
-
-    class Meta:
-        unique_together = ['jugador', 'partido']
-        verbose_name = 'Gol en partido'
-        verbose_name_plural = 'Goles en partidos'
-
-    def __str__(self):
-        return f"{self.jugador} - {self.partido} ({self.cantidad})"

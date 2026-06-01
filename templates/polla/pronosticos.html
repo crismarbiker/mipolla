@@ -8,79 +8,68 @@
   <p class="text-muted small mb-0">Puedes cambiar mientras el partido no haya comenzado</p>
 </div>
 
-<form method="post" id="pronosticos-form">
-  {% csrf_token %}
+<!-- Tab nav -->
+<div class="px-3 py-2 sticky-top" style="top:56px;background:var(--c-bg);z-index:100;border-bottom:1px solid var(--c-border);">
+  <div class="d-flex gap-2">
+    <button class="fase-tab-btn active" onclick="showTab('tab-partidos',this)">
+      <i class="bi bi-calendar3 me-1"></i>Partidos
+    </button>
+    <button class="fase-tab-btn" onclick="showTab('tab-jugadores',this)">
+      <i class="bi bi-person-badge me-1"></i>Mis Jugadores
+      <span class="badge ms-1" style="background:rgba(240,192,64,.2);color:#f0c040;">{{ seleccion_actual|length }}/{{ max_jugadores }}</span>
+    </button>
+    <button class="fase-tab-btn" onclick="showTab('tab-campeon',this)">
+      <i class="bi bi-trophy me-1"></i>Campeón
+    </button>
+  </div>
+</div>
 
-  <!-- Campeón y Goleador -->
-  <div class="px-3 pt-3 pb-2">
-    <div class="section-title">Pronósticos especiales</div>
-    <div class="card mb-3" style="border-color:rgba(240,192,64,.3) !important;">
-      <div class="card-body p-3">
-        <div class="d-flex align-items-center gap-2 mb-3">
-          <span style="font-size:1.5rem;">🏆</span>
-          <div>
-            <div class="fw-bold">Campeón del Mundial</div>
-            <div class="text-muted small">Acierto = <span class="text-warning fw-bold">+15 puntos</span></div>
-          </div>
-          {% if perfil.campeon %}
-          <span class="ms-auto">{{ perfil.campeon.emoji }} {{ perfil.campeon.nombre }}</span>
-          {% endif %}
+<!-- ============================================================
+     TAB 1: Match predictions
+     ============================================================ -->
+<div id="tab-partidos" class="tab-pane px-3 py-3">
+
+  <!-- Scoring rules card -->
+  <div class="card mb-3" style="background:rgba(13,30,53,.5) !important;border-color:rgba(26,51,86,.8) !important;">
+    <div class="card-body p-3">
+      <div class="fw-semibold mb-2 small"><i class="bi bi-info-circle text-warning me-2"></i>Tabla de puntos</div>
+      <div class="d-flex flex-column gap-1" style="font-size:.78rem;">
+        <div class="d-flex justify-content-between">
+          <span class="text-muted">Resultado exacto</span>
+          <span class="fw-bold text-success">+3 pts</span>
         </div>
-        {{ perfil_form.campeon }}
-
-        <hr class="my-3" style="border-color:var(--c-border);">
-
-        <div class="d-flex align-items-center gap-2 mb-3">
-          <span style="font-size:1.5rem;">👟</span>
-          <div>
-            <div class="fw-bold">Goleador del Mundial</div>
-            <div class="text-muted small">Acierto = <span class="text-warning fw-bold">+10 puntos</span></div>
-          </div>
-          {% if perfil.goleador %}
-          <span class="ms-auto small text-muted">{{ perfil.goleador.nombre_completo }}</span>
-          {% endif %}
+        <div class="d-flex justify-content-between">
+          <span class="text-muted">Ganador/empate correcto</span>
+          <span class="fw-bold text-warning">+2 pts</span>
         </div>
-        {{ perfil_form.goleador }}
-      </div>
-    </div>
-
-    <!-- Reglas de puntuación -->
-    <div class="card mb-3" style="background:rgba(13,30,53,.5) !important;border-color:rgba(26,51,86,.8) !important;">
-      <div class="card-body p-3">
-        <div class="fw-semibold mb-2 small"><i class="bi bi-info-circle text-warning me-2"></i>Tabla de puntos</div>
-        <div class="d-flex flex-column gap-1" style="font-size:.78rem;">
-          <div class="d-flex justify-content-between">
-            <span class="text-muted">Resultado exacto</span>
-            <span class="fw-bold text-success">+3 pts</span>
-          </div>
-          <div class="d-flex justify-content-between">
-            <span class="text-muted">Ganador/empate correcto</span>
-            <span class="fw-bold text-warning">+1 pt</span>
-          </div>
-          <div class="d-flex justify-content-between">
-            <span class="text-muted">Penales: aciertas si hay/no hay</span>
-            <span class="fw-bold" style="color:#60a5fa;">+2 pts</span>
-          </div>
-          <div class="d-flex justify-content-between">
-            <span class="text-muted" style="font-size:.7rem;">* El marcador total incluye penales (ej. 1-1 + pen 4-3 = 5-4)</span>
-          </div>
+        <div class="d-flex justify-content-between">
+          <span class="text-muted">Penales: aciertas si hay/no hay</span>
+          <span class="fw-bold" style="color:#60a5fa;">+2 pts</span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span class="text-muted">Por cada gol de tus jugadores seleccionados</span>
+          <span class="fw-bold" style="color:#c084fc;">+2 pts</span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span class="text-muted">Campeón correcto</span>
+          <span class="fw-bold" style="color:#f59e0b;">+15 pts</span>
+        </div>
+        <div class="mt-1 text-muted" style="font-size:.68rem;">
+          * Marcador total incluye penales (ej: 1-1 + pen 4-3 = 5-4)
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Partidos abiertos -->
   {% if partidos %}
-  <div class="px-3 pb-3">
-    <div class="section-title">Partidos disponibles ({{ partidos|length }})</div>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="pronosticos">
 
     {% for partido in partidos %}
     <div class="score-input-wrap mb-3">
-      <!-- Match header -->
       <div class="d-flex align-items-center justify-content-between mb-2">
-        <span class="badge" style="background:rgba(0,104,71,.2);color:#4ade80;font-size:.6rem;">
-          {{ partido.fase.descripcion }}
-        </span>
+        <span class="badge" style="background:rgba(0,104,71,.2);color:#4ade80;font-size:.6rem;">{{ partido.fase.descripcion }}</span>
         {% if partido.fecha %}
         <span class="text-muted" style="font-size:.7rem;">
           <i class="bi bi-calendar3 me-1"></i>{{ partido.fecha|date:"d M · H:i" }}
@@ -88,49 +77,39 @@
         {% endif %}
       </div>
 
-      <!-- Teams + inputs -->
       <div class="d-flex align-items-center gap-2">
-        <!-- Local -->
-        <div class="team-block flex-shrink-0" style="min-width:56px;">
+        <div class="team-block flex-shrink-0" style="min-width:60px;">
           <span class="team-flag" style="font-size:2.2rem;">{{ partido.pais_local.emoji }}</span>
-          <span class="team-name" style="max-width:64px;">{{ partido.pais_local.nombre }}</span>
+          <span class="team-name" style="max-width:68px;">{{ partido.pais_local.nombre }}</span>
         </div>
-
-        <!-- Inputs -->
         <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-center">
-          <input type="number" name="gl_{{ partido.id }}" min="0" max="20"
-                 class="score-input form-control"
+          <input type="number" name="gl_{{ partido.id }}" min="0" max="20" class="score-input form-control"
                  value="{% with pron=user_pronosticos|get_item:partido.id %}{% if pron %}{{ pron.goles_local }}{% endif %}{% endwith %}"
                  placeholder="0">
           <span class="dash-sep">-</span>
-          <input type="number" name="gv_{{ partido.id }}" min="0" max="20"
-                 class="score-input form-control"
+          <input type="number" name="gv_{{ partido.id }}" min="0" max="20" class="score-input form-control"
                  value="{% with pron=user_pronosticos|get_item:partido.id %}{% if pron %}{{ pron.goles_visitante }}{% endif %}{% endwith %}"
                  placeholder="0">
         </div>
-
-        <!-- Visitante -->
-        <div class="team-block flex-shrink-0" style="min-width:56px;">
+        <div class="team-block flex-shrink-0" style="min-width:60px;">
           <span class="team-flag" style="font-size:2.2rem;">{{ partido.pais_visitante.emoji }}</span>
-          <span class="team-name" style="max-width:64px;">{{ partido.pais_visitante.nombre }}</span>
+          <span class="team-name" style="max-width:68px;">{{ partido.pais_visitante.nombre }}</span>
         </div>
       </div>
 
-      <!-- Penalty option (only elimination rounds) -->
       {% if partido.es_eliminatoria %}
       <div class="mt-2 pt-2 d-flex align-items-center gap-2" style="border-top:1px solid var(--c-border);">
         <label class="pen-toggle d-flex align-items-center gap-2 mb-0">
           <input type="checkbox" name="pen_{{ partido.id }}"
                  {% with pron=user_pronosticos|get_item:partido.id %}{% if pron and pron.predice_penales %}checked{% endif %}{% endwith %}>
           <span style="font-size:.78rem;color:#60a5fa;">
-            <i class="bi bi-bullseye me-1"></i>Predigo que habrá <strong>penales</strong>
-            <span class="ms-1" style="font-size:.7rem;color:var(--c-muted);">(+2 pts si aciertas)</span>
+            <i class="bi bi-bullseye me-1"></i>Habrá penales
+            <span class="ms-1 text-muted" style="font-size:.68rem;">(+2 pts si aciertas)</span>
           </span>
         </label>
       </div>
       {% endif %}
 
-      <!-- Current prediction display -->
       {% with pron=user_pronosticos|get_item:partido.id %}
       {% if pron %}
       <div class="mt-1" style="font-size:.7rem;color:var(--c-muted);">
@@ -144,16 +123,194 @@
     {% endfor %}
 
     <button type="submit" class="btn btn-gold btn-lg w-100 mt-2">
-      <i class="bi bi-save2 me-2"></i>Guardar todos los pronósticos
+      <i class="bi bi-save2 me-2"></i>Guardar pronósticos de partidos
     </button>
-  </div>
+  </form>
   {% else %}
-  <div class="px-3 py-5 text-center">
+  <div class="text-center py-5">
     <div style="font-size:3rem;">⏳</div>
-    <p class="text-muted mt-2">No hay partidos disponibles para pronosticar ahora.</p>
+    <p class="text-muted mt-2">No hay partidos disponibles para pronosticar.</p>
     <a href="{% url 'polla:partidos' %}" class="btn btn-outline-secondary mt-2">Ver todos los partidos</a>
   </div>
   {% endif %}
+</div>
 
-</form>
+<!-- ============================================================
+     TAB 2: Player selection (up to 5)
+     ============================================================ -->
+<div id="tab-jugadores" class="tab-pane d-none px-3 py-3">
+
+  <div class="card mb-3" style="background:rgba(13,30,53,.5) !important;border-color:rgba(124,58,237,.3) !important;">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-start gap-2">
+        <span style="font-size:1.5rem;">👟</span>
+        <div>
+          <div class="fw-bold mb-1">Elige hasta {{ max_jugadores }} jugadores</div>
+          <div class="text-muted small">Por cada gol que anoten durante todo el torneo, ganas <strong class="text-warning">+2 pts</strong> por gol.</div>
+          <div class="text-muted small mt-1">Puedes cambiar tu selección antes de que el torneo comience.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current selection -->
+  {% if seleccion_actual %}
+  <div class="mb-3">
+    <div class="section-title">Tu selección actual</div>
+    <div id="seleccion-chips" class="d-flex flex-wrap gap-2 mb-2">
+      {% for sel in seleccion_actual %}
+      <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill"
+           style="background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);font-size:.8rem;"
+           data-id="{{ sel.jugador.id }}">
+        <span>{{ sel.jugador.pais.emoji }}</span>
+        <span class="fw-semibold">{{ sel.jugador.nombre_completo }}</span>
+        <span class="text-muted small">{{ sel.jugador.pais.nombre }}</span>
+        {% if sel.puntos_acumulados > 0 %}
+        <span class="badge" style="background:rgba(240,192,64,.2);color:#f0c040;">+{{ sel.puntos_acumulados }}pts</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Player search & selection -->
+  <form method="post" id="form-jugadores">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="jugadores">
+
+    <div class="mb-3">
+      <label class="form-label">Buscar jugadores</label>
+      <input type="text" id="player-search" class="form-control" placeholder="Escribe el nombre o país..."
+             autocomplete="off" oninput="filterPlayers()">
+    </div>
+
+    <div class="mb-2 d-flex justify-content-between align-items-center">
+      <span class="text-muted small">
+        <span id="selected-count">{{ ids_seleccionados|length }}</span>/{{ max_jugadores }} seleccionados
+      </span>
+      <button type="submit" class="btn btn-gold btn-sm fw-bold">
+        <i class="bi bi-save2 me-1"></i>Guardar selección
+      </button>
+    </div>
+
+    <!-- Players grouped by country -->
+    <div id="players-list" style="max-height:60vh;overflow-y:auto;">
+      {% for pais in paises_con_jugadores %}
+      {% if pais.jugadores.all %}
+      <div class="pais-group" data-pais="{{ pais.nombre|lower }}">
+        <div class="divider-text my-2" style="font-size:.65rem;">
+          {{ pais.emoji }} {{ pais.nombre }} — Grupo {{ pais.letra_grupo }}
+        </div>
+        {% for jugador in pais.jugadores.all %}
+        <label class="player-row d-flex align-items-center gap-3 p-2 rounded-3 mb-1"
+               style="cursor:pointer;border:1px solid transparent;transition:all .15s;"
+               data-nombre="{{ jugador.nombre_completo|lower }}"
+               data-pais="{{ pais.nombre|lower }}">
+          <input type="checkbox" name="jugador_ids" value="{{ jugador.id }}"
+                 class="player-cb form-check-input flex-shrink-0"
+                 style="width:20px;height:20px;accent-color:#7c3aed;"
+                 {% if jugador.id in ids_seleccionados %}checked{% endif %}
+                 onchange="updatePlayerCount()">
+          <div class="flex-grow-1">
+            <div style="font-size:.82rem;font-weight:500;">{{ jugador.nombre_completo }}</div>
+            <div style="font-size:.68rem;color:var(--c-muted);">{{ pais.nombre }}</div>
+          </div>
+          {% if jugador.total_goles > 0 %}
+          <span class="badge" style="background:rgba(34,197,94,.15);color:#4ade80;font-size:.65rem;">
+            {{ jugador.total_goles }} gol{{ jugador.total_goles|pluralize:"es" }}
+          </span>
+          {% endif %}
+        </label>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </form>
+</div>
+
+<!-- ============================================================
+     TAB 3: Champion
+     ============================================================ -->
+<div id="tab-campeon" class="tab-pane d-none px-3 py-3">
+  <div class="card mb-3" style="background:rgba(13,30,53,.5) !important;border-color:rgba(240,192,64,.3) !important;">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-center gap-2">
+        <span style="font-size:1.5rem;">🏆</span>
+        <div>
+          <div class="fw-bold">Campeón del Mundial</div>
+          <div class="text-muted small">Acierto = <span class="text-warning fw-bold">+15 puntos</span></div>
+        </div>
+        {% if perfil.campeon %}
+        <div class="ms-auto d-flex align-items-center gap-1">
+          <span style="font-size:1.5rem;">{{ perfil.campeon.emoji }}</span>
+          <span class="fw-bold text-warning">{{ perfil.campeon.nombre }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="campeon">
+    {{ perfil_form.campeon }}
+    <button type="submit" class="btn btn-gold w-100 mt-3 fw-bold">
+      <i class="bi bi-trophy me-2"></i>Guardar campeón
+    </button>
+  </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Tab switching
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('d-none'));
+  document.querySelectorAll('.fase-tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.remove('d-none');
+  btn.classList.add('active');
+}
+
+// Player selection counter and validation
+function updatePlayerCount() {
+  const max = {{ max_jugadores }};
+  const cbs = document.querySelectorAll('.player-cb');
+  const checked = [...cbs].filter(c => c.checked);
+  document.getElementById('selected-count').textContent = checked.length;
+
+  if (checked.length >= max) {
+    cbs.forEach(cb => { if (!cb.checked) cb.disabled = true; });
+  } else {
+    cbs.forEach(cb => { cb.disabled = false; });
+  }
+
+  // Highlight selected rows
+  document.querySelectorAll('.player-row').forEach(row => {
+    const cb = row.querySelector('.player-cb');
+    row.style.background = cb.checked ? 'rgba(124,58,237,.15)' : '';
+    row.style.borderColor = cb.checked ? 'rgba(124,58,237,.4)' : 'transparent';
+  });
+}
+
+// Player search filter
+function filterPlayers() {
+  const q = document.getElementById('player-search').value.toLowerCase().trim();
+  document.querySelectorAll('.player-row').forEach(row => {
+    const nombre = row.dataset.nombre || '';
+    const pais = row.dataset.pais || '';
+    row.style.display = (!q || nombre.includes(q) || pais.includes(q)) ? '' : 'none';
+  });
+  // Hide empty pais groups
+  document.querySelectorAll('.pais-group').forEach(g => {
+    const visible = [...g.querySelectorAll('.player-row')].some(r => r.style.display !== 'none');
+    g.style.display = visible ? '' : 'none';
+  });
+}
+
+// Init on load
+updatePlayerCount();
+</script>
 {% endblock %}

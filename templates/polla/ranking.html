@@ -71,19 +71,18 @@
       </div>
       <div class="rank-sub d-flex gap-2 flex-wrap">
         <span><i class="bi bi-bullseye me-1" style="color:#4ade80;"></i>{{ d.exactos }} exactos</span>
-        <span><i class="bi bi-check2 me-1" style="color:#fbbf24;"></i>{{ d.acertados }} acertados</span>
+        <span><i class="bi bi-check2 me-1" style="color:#fbbf24;"></i>{{ d.acertados }} correctos</span>
         <span class="text-muted">{{ d.jugados }} jugados</span>
       </div>
-      <!-- Champion & goleador mini -->
       <div class="d-flex gap-2 mt-1 flex-wrap">
         {% if d.campeon %}
         <span style="font-size:.65rem;color:var(--c-muted);">
           🏆 {{ d.campeon.emoji }} {{ d.campeon.nombre }}
         </span>
         {% endif %}
-        {% if d.goleador %}
-        <span style="font-size:.65rem;color:var(--c-muted);">
-          👟 {{ d.goleador.nombre_completo|truncatechars:18 }}
+        {% if d.pts_jugadores > 0 %}
+        <span style="font-size:.65rem;" class="badge" style="background:rgba(124,58,237,.15);color:#c084fc;">
+          👟 +{{ d.pts_jugadores }} goles
         </span>
         {% endif %}
       </div>
