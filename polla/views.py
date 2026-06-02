@@ -38,7 +38,11 @@ def custom_login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None and user.is_active:
             login(request, user)
-            next_url = request.GET.get('next', '/')
+            # Default to MiPolla ranking, not site root
+            next_url = request.GET.get('next', '/MiPolla/')
+            # Safety: don't redirect outside MiPolla
+            if not next_url.startswith('/MiPolla') and not next_url.startswith('/'):
+                next_url = '/MiPolla/'
             return redirect(next_url)
         else:
             error = True
