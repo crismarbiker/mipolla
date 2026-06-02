@@ -56,10 +56,11 @@ def _es_admin(user):
     return user.is_staff
 
 
-@login_required
 def home(request):
-    # Home IS the ranking
-    return redirect('polla:ranking')
+    # Authenticated → ranking | Not authenticated → landing page
+    if request.user.is_authenticated:
+        return redirect('polla:ranking')
+    return redirect('landing')
 
 
 @login_required
