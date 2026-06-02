@@ -498,6 +498,39 @@ def _forward_to_elcarguero(raw_body: bytes):
 
 @login_required
 @user_passes_test(_es_admin)
+def admin_reset_password(request, pk):
+    """Generate new password for a user, show it on screen + try WhatsApp."""
+    user = get_object_or_404(User, pk=pk)
+    from .whatsapp import generar_password
+
+    nueva = generar_password()
+    user.set_password(nueva)
+    user.save()
+
+    nombre = user.get_full_name() or user.username
+    wa_status = 'no enviado'
+
+    try:
+        telefono = user.perfil.telefono
+        if telefono and len(telefono) == 11:
+            _enviar_solo_clave(telefono, nueva)
+            wa_status = f'enviado a +{telefono}'
+    except Exception:
+        pass
+
+    # Show password prominently in the flash message
+    messages.success(
+        request,
+        f'<strong>{nombre}</strong> — Nueva clave generada: '
+        f'<code style="font-size:1.1rem;font-weight:900;letter-spacing:2px;background:rgba(29,78,216,.15);'
+        f'padding:.15rem .5rem;border-radius:6px;color:var(--primary,#1D4ED8)">{nueva}</code> '
+        f'<span style="color:var(--muted,#6b7280);font-size:.8rem;">(WhatsApp: {wa_status})</span>'
+    )
+    return redirect('polla:admin_usuarios')
+
+
+@login_required
+@user_passes_test(_es_admin)
 def admin_toggle_usuario(request, pk):
     user = get_object_or_404(User, pk=pk, is_staff=False)
     user.is_active = not user.is_active

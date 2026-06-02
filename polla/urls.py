@@ -12,6 +12,7 @@ urlpatterns = [
     path('reglas/', views.reglas, name='reglas'),
     path('admin/usuarios/', views.admin_usuarios, name='admin_usuarios'),
     path('admin/usuarios/<int:pk>/toggle/', views.admin_toggle_usuario, name='admin_toggle_usuario'),
+    path('admin/usuarios/<int:pk>/reset-password/', views.admin_reset_password, name='admin_reset_password'),
     path('admin/resultados/', views.admin_resultados, name='admin_resultados'),
     path('admin/resultados/<int:pk>/fetch/', views.admin_fetch_resultado, name='admin_fetch_resultado'),
     path('admin/whatsapp/test/', views.admin_test_whatsapp, name='admin_test_whatsapp'),
