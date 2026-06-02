@@ -4,44 +4,36 @@
 
 {% block content %}
 <!-- Header -->
-<div class="page-header">
-  <div class="d-flex align-items-start justify-content-between">
-    <div>
-      <h1 class="page-title">🏆 Ranking</h1>
-      <p class="page-subtitle">{{ datos|length }} participante{% if datos|length != 1 %}s{% endif %} · Toca un nombre para ver sus pronósticos</p>
-    </div>
-    {% if proximos %}
-    <a href="{% url 'polla:pronosticos' %}" class="btn-solid blue sm">
-      <i class="bi bi-pencil-square"></i> Pronosticar
-    </a>
-    {% endif %}
+<div class="page-header d-flex align-items-center justify-content-between">
+  <div>
+    <h1 class="page-title">🏆 Ranking General</h1>
+    <p class="page-sub">{{ datos|length }} participante{% if datos|length != 1 %}s{% endif %} · Toca el nombre para ver el detalle</p>
   </div>
+  {% if proximos %}
+  <a href="{% url 'polla:pronosticos' %}" class="btn btn-wine btn-sm">
+    <i class="bi bi-pencil-square"></i> Pronosticar
+  </a>
+  {% endif %}
 </div>
 
-<!-- Próximos partidos — horizontal scroll -->
+<!-- Próximos mini strip -->
 {% if proximos %}
-<div style="background:#fff;border-bottom:1px solid #e5e7eb;padding:.5rem 1rem;">
-  <div style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;margin-bottom:.4rem;">
-    Próximos partidos
-  </div>
-  <div style="display:flex;gap:.5rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.1rem;">
+<div style="background:#fff;border-bottom:1px solid #e2e4e8;padding:.5rem 1rem;">
+  <div style="display:flex;gap:.45rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.1rem;">
     {% for p in proximos %}
-    <div style="flex-shrink:0;border:1.5px solid #e5e7eb;border-radius:12px;background:#f9fafb;padding:.45rem .7rem;min-width:120px;text-align:center;">
-      <div style="font-size:.58rem;color:#9ca3af;font-weight:700;text-transform:uppercase;">{{ p.fase.descripcion }}</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:.35rem;margin:.25rem 0;">
-        <span style="font-size:1.25rem;">{{ p.pais_local.emoji }}</span>
-        <span style="font-size:.65rem;color:#9ca3af;font-weight:700;">vs</span>
-        <span style="font-size:1.25rem;">{{ p.pais_visitante.emoji }}</span>
+    <div style="flex-shrink:0;border:1px solid #e2e4e8;border-radius:10px;padding:.4rem .65rem;min-width:115px;text-align:center;background:#f9fafb;">
+      <div style="font-size:.57rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#9aa3ae;">{{ p.fase.descripcion }}</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:.3rem;margin:.2rem 0;">
+        <span style="font-size:1.2rem;">{{ p.pais_local.emoji }}</span>
+        <span style="font-size:.6rem;color:#9aa3ae;font-weight:700;">vs</span>
+        <span style="font-size:1.2rem;">{{ p.pais_visitante.emoji }}</span>
       </div>
       {% if p.id in user_prons %}
-      <span class="badge-w bw-green" style="font-size:.55rem;">✓ listo</span>
+      <span class="badge b-green" style="font-size:.55rem;">✓ listo</span>
       {% elif p.abierto %}
-      <a href="{% url 'polla:pronosticos' %}" class="badge-w bw-blue text-decoration-none" style="font-size:.55rem;">+ pron.</a>
+      <a href="{% url 'polla:pronosticos' %}" class="badge b-wine text-decoration-none" style="font-size:.55rem;">+ pron.</a>
       {% else %}
-      <span class="badge-w bw-gray" style="font-size:.55rem;">🔒</span>
-      {% endif %}
-      {% if p.fecha %}
-      <div style="font-size:.58rem;color:#9ca3af;margin-top:.2rem;">{{ p.fecha|date:"d M · H:i" }}</div>
+      <span class="badge b-gray" style="font-size:.55rem;">🔒</span>
       {% endif %}
     </div>
     {% endfor %}
@@ -49,98 +41,101 @@
 </div>
 {% endif %}
 
-<div class="px-3 pt-3 pb-2">
+<div class="px-3 py-3">
 
-<!-- Podium top 3 -->
-{% if datos|length >= 3 %}
-<div class="card-w card-w-p mb-4">
-  <div class="d-flex align-items-end justify-content-center gap-3">
-    <!-- 2nd -->
-    <a href="{% url 'polla:pronosticos_usuario' datos.1.usuario.username %}" class="text-center text-decoration-none" style="flex:1;">
-      <div class="rank-av mx-auto mb-1" style="width:46px;height:46px;background:linear-gradient(135deg,#6b7280,#9ca3af);">
-        {{ datos.1.usuario.first_name|first|upper }}{{ datos.1.usuario.last_name|first|upper }}
-      </div>
-      <div style="font-size:1.5rem;line-height:1.2;">🥈</div>
-      <div style="font-weight:700;font-size:.78rem;color:#374151;margin-top:.15rem;">{{ datos.1.usuario.get_full_name|default:datos.1.usuario.username|truncatechars:13 }}</div>
-      <div style="font-size:1.1rem;font-weight:900;color:#2563eb;">{{ datos.1.puntos }} <span style="font-size:.65rem;font-weight:600;color:#9ca3af;">pts</span></div>
-    </a>
-    <!-- 1st (bigger) -->
-    <a href="{% url 'polla:pronosticos_usuario' datos.0.usuario.username %}" class="text-center text-decoration-none" style="flex:1.15;">
-      <div class="rank-av mx-auto mb-1" style="width:58px;height:58px;font-size:1.1rem;background:linear-gradient(135deg,#2563eb,#7c3aed);box-shadow:0 4px 14px rgba(37,99,235,.3);">
-        {{ datos.0.usuario.first_name|first|upper }}{{ datos.0.usuario.last_name|first|upper }}
-      </div>
-      <div style="font-size:1.85rem;line-height:1.2;">🥇</div>
-      <div style="font-weight:800;font-size:.85rem;color:#111827;margin-top:.15rem;">{{ datos.0.usuario.get_full_name|default:datos.0.usuario.username|truncatechars:14 }}</div>
-      <div style="font-size:1.4rem;font-weight:900;color:#2563eb;">{{ datos.0.puntos }} <span style="font-size:.65rem;font-weight:600;color:#9ca3af;">pts</span></div>
-    </a>
-    <!-- 3rd -->
-    <a href="{% url 'polla:pronosticos_usuario' datos.2.usuario.username %}" class="text-center text-decoration-none" style="flex:1;">
-      <div class="rank-av mx-auto mb-1" style="width:46px;height:46px;background:linear-gradient(135deg,#92400e,#d97706);">
-        {{ datos.2.usuario.first_name|first|upper }}{{ datos.2.usuario.last_name|first|upper }}
-      </div>
-      <div style="font-size:1.5rem;line-height:1.2;">🥉</div>
-      <div style="font-weight:700;font-size:.78rem;color:#374151;margin-top:.15rem;">{{ datos.2.usuario.get_full_name|default:datos.2.usuario.username|truncatechars:13 }}</div>
-      <div style="font-size:1.1rem;font-weight:900;color:#2563eb;">{{ datos.2.puntos }} <span style="font-size:.65rem;font-weight:600;color:#9ca3af;">pts</span></div>
-    </a>
-  </div>
+<!-- ── TABLA RANKING ── -->
+<div class="section-bar">Resumen Principal</div>
+<div class="rank-table-wrap mb-4">
+  <table class="rank-table">
+    <thead>
+      <tr>
+        <th style="width:40px;text-align:center;">#</th>
+        <th>Nombre Completo</th>
+        <th class="center" style="width:90px;">Puntos</th>
+        <th style="width:120px;">Campeón</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in datos %}
+      <tr class="{% if d.usuario == request.user %}is-me{% endif %}"
+          onclick="window.location='{% url 'polla:pronosticos_usuario' d.usuario.username %}'">
+        <td class="center">
+          {% if forloop.counter == 1 %}<span style="font-size:1.1rem;">🥇</span>
+          {% elif forloop.counter == 2 %}<span style="font-size:1.1rem;">🥈</span>
+          {% elif forloop.counter == 3 %}<span style="font-size:1.1rem;">🥉</span>
+          {% else %}<span class="rank-pos">{{ forloop.counter }}</span>{% endif %}
+        </td>
+        <td>
+          <div class="rank-name-cell">
+            <span class="rank-av"
+                  style="background:linear-gradient(135deg,{% cycle '#0D2B6E' '#BF0D3E' '#006847' '#7C3AED' '#0369A1' '#D97706' '#DB2777' '#059669' %},{% cycle '#BF0D3E' '#006847' '#0D2B6E' '#0369A1' '#7C3AED' '#059669' '#D97706' '#DB2777' %});">
+              {{ d.usuario.first_name|first|upper }}{{ d.usuario.last_name|first|upper }}
+            </span>
+            <span style="font-weight:700;">
+              {{ d.usuario.get_full_name|default:d.usuario.username }}
+              {% if d.usuario == request.user %}
+              <span class="badge b-wine ms-1" style="font-size:.55rem;">Tú</span>
+              {% endif %}
+            </span>
+          </div>
+          <div style="font-size:.65rem;color:#9aa3ae;margin-left:2.2rem;margin-top:.1rem;">
+            🎯 {{ d.exactos }} exactos · ✓ {{ d.acertados }} ganadores · {{ d.jugados }} jugados
+            {% if d.pts_jugadores > 0 %} · 👟 +{{ d.pts_jugadores }} pts{% endif %}
+          </div>
+        </td>
+        <td class="pts">{{ d.puntos }} <span style="font-size:.65rem;font-weight:600;color:#9aa3ae;">pts</span></td>
+        <td style="font-size:.8rem;color:#4a5568;">
+          {% if d.campeon %}{{ d.campeon.emoji }} {{ d.campeon.nombre }}{% else %}<span style="color:#d1d5db;">—</span>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="text-center py-4" style="color:#9aa3ae;">
+          Aún no hay puntuaciones registradas.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Resultados recientes -->
+{% if recientes %}
+<div class="section-bar">Resultados Recientes</div>
+<div class="rank-table-wrap mb-4">
+  <table class="rank-table">
+    <thead>
+      <tr>
+        <th>Partido</th>
+        <th class="center">Resultado</th>
+        <th class="center">Fase</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in recientes %}
+      <tr>
+        <td>
+          <span style="font-size:1.2rem;">{{ p.pais_local.emoji }}</span>
+          <span style="font-size:.8rem;font-weight:700;margin:0 .3rem;">{{ p.pais_local.nombre }}</span>
+          <span style="color:#9aa3ae;font-size:.75rem;">vs</span>
+          <span style="font-size:.8rem;font-weight:700;margin:0 .3rem;">{{ p.pais_visitante.nombre }}</span>
+          <span style="font-size:1.2rem;">{{ p.pais_visitante.emoji }}</span>
+        </td>
+        <td class="center" style="font-weight:900;color:#0D2B6E;font-size:1rem;">
+          {{ p.goles_local }}-{{ p.goles_visitante }}
+          {% if p.hubo_penales %}
+          <span class="badge b-blue" style="font-size:.55rem;margin-left:.2rem;">pen. {{ p.penales_local }}-{{ p.penales_visitante }}</span>
+          {% endif %}
+        </td>
+        <td class="center">
+          <span class="badge b-gray" style="font-size:.6rem;">{{ p.fase.descripcion }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endif %}
-
-<!-- Full ranking table -->
-<div class="section-hdr">Tabla completa</div>
-
-<div class="rank-table">
-  {% for d in datos %}
-  <a href="{% url 'polla:pronosticos_usuario' d.usuario.username %}"
-     class="rank-row {% if d.usuario == request.user %}is-me{% endif %}">
-
-    <!-- Position -->
-    <span class="rank-pos">
-      {% if forloop.counter == 1 %}🥇
-      {% elif forloop.counter == 2 %}🥈
-      {% elif forloop.counter == 3 %}🥉
-      {% else %}{{ forloop.counter }}{% endif %}
-    </span>
-
-    <!-- Avatar -->
-    <span class="rank-av"
-          style="background:linear-gradient(135deg,{% cycle '#2563eb' '#16a34a' '#d97706' '#7c3aed' '#dc2626' '#0284c7' '#db2777' '#059669' %},{% cycle '#7c3aed' '#2563eb' '#dc2626' '#d97706' '#0284c7' '#16a34a' '#059669' '#db2777' %});">
-      {{ d.usuario.first_name|first|upper }}{{ d.usuario.last_name|first|upper }}
-    </span>
-
-    <!-- Name + stats -->
-    <div class="rank-info">
-      <div class="rank-name">
-        {{ d.usuario.get_full_name|default:d.usuario.username }}
-        {% if d.usuario == request.user %}
-        <span class="badge-w bw-blue ms-1" style="font-size:.55rem;">Tú</span>
-        {% endif %}
-      </div>
-      <div class="rank-meta d-flex flex-wrap gap-2">
-        <span>🎯 {{ d.exactos }} exactos</span>
-        <span>✓ {{ d.acertados }} correctos</span>
-        <span>{{ d.jugados }} jugados</span>
-        {% if d.pts_jugadores > 0 %}<span style="color:#7c3aed;">👟 +{{ d.pts_jugadores }}</span>{% endif %}
-      </div>
-      {% if d.campeon %}
-      <div style="font-size:.65rem;color:#9ca3af;margin-top:1px;">🏆 {{ d.campeon.emoji }} {{ d.campeon.nombre }}</div>
-      {% endif %}
-    </div>
-
-    <!-- Points + arrow -->
-    <div class="rank-pts-block">
-      <div class="rank-pts">{{ d.puntos }}</div>
-      <div class="rank-pts-lbl">pts</div>
-    </div>
-    <i class="bi bi-chevron-right" style="color:#d1d5db;font-size:.8rem;flex-shrink:0;"></i>
-  </a>
-  {% empty %}
-  <div class="card-w card-w-p text-center py-4" style="color:#9ca3af;">
-    <div style="font-size:2.5rem;">📊</div>
-    <p class="mt-2 mb-0">Aún no hay puntuaciones.</p>
-  </div>
-  {% endfor %}
-</div>
 
 </div>
 {% endblock %}

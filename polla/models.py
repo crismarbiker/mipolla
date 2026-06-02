@@ -289,26 +289,43 @@ class Pronostico(models.Model):
             )
         super().save(*args, **kwargs)
 
-    def calcular_puntos(self):
+    def calcular_desglose(self) -> dict:
+        """
+        Returns point breakdown matching the reference scoring:
+        - ganador: 3 pts if correct winner or draw
+        - resultado: +2 pts bonus if exact score (on top of ganador)
+        - penales: +2 pts if correctly predicted penalties (knockout only)
+        Total for exact = 5, correct winner = 3, wrong = 0.
+        """
         p = self.partido
         if not p.jugado or p.goles_local is None:
-            return 0
+            return {'ganador': 0, 'resultado': 0, 'penales': 0, 'total': 0}
 
-        puntos = 0
         real_gl = p.goles_totales_local
         real_gv = p.goles_totales_visitante
 
+        pts_ganador = 0
+        pts_resultado = 0
+        pts_penales = 0
+
+        if self._signo(self.goles_local, self.goles_visitante) == self._signo(real_gl, real_gv):
+            pts_ganador = 3
+
         if self.goles_local == real_gl and self.goles_visitante == real_gv:
-            puntos += 3
-        elif self._signo(self.goles_local, self.goles_visitante) == self._signo(real_gl, real_gv):
-            puntos += 2  # Correct outcome (not exact score): +2 pts
+            pts_resultado = 2
 
-        # Bonus penales (only knockout rounds): +2 if correctly predicted
-        if p.es_eliminatoria:
-            if self.predice_penales == p.hubo_penales:
-                puntos += 2
+        if p.es_eliminatoria and self.predice_penales == p.hubo_penales:
+            pts_penales = 2
 
-        return puntos
+        return {
+            'ganador': pts_ganador,
+            'resultado': pts_resultado,
+            'penales': pts_penales,
+            'total': pts_ganador + pts_resultado + pts_penales,
+        }
+
+    def calcular_puntos(self):
+        return self.calcular_desglose()['total']
 
     def __str__(self):
         return f"{self.usuario.username}: {self.partido} ({self.goles_local}-{self.goles_visitante})"

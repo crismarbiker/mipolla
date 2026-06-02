@@ -1,27 +1,25 @@
 {% extends 'base.html' %}
 {% load polla_extras %}
-{% block title %}{{ target.get_full_name|default:target.username }} — Pronósticos{% endblock %}
+{% block title %}{{ target.get_full_name|default:target.username }} — Detalle{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div class="d-flex align-items-center gap-2">
-    <a href="{% url 'polla:ranking' %}" class="btn-solid ghost sm">
-      <i class="bi bi-arrow-left"></i>
-    </a>
-    <div>
-      <h1 class="page-title">{{ target.get_full_name|default:target.username }}</h1>
-      <p class="page-subtitle">{{ total_prons }} pronóstico{% if total_prons != 1 %}s{% endif %} · solo lectura</p>
-    </div>
+<div class="page-header d-flex align-items-center gap-2">
+  <a href="{% url 'polla:ranking' %}" class="btn btn-ghost btn-sm">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <div>
+    <h1 class="page-title">{{ target.get_full_name|default:target.username }}</h1>
+    <p class="page-sub">{{ total_prons }} pronóstico{% if total_prons != 1 %}s{% endif %} · {{ jugados_prons }} jugados</p>
   </div>
 </div>
 
 <div class="px-3 py-3">
 
-<!-- Puntos summary -->
+<!-- Stats summary -->
 <div class="row g-2 mb-3">
   <div class="col-3">
     <div class="stat-card">
-      <div class="stat-num text-blue">{{ pts_total }}</div>
+      <div class="stat-num text-wine">{{ pts_total }}</div>
       <div class="stat-lbl">Total</div>
     </div>
   </div>
@@ -33,7 +31,7 @@
   </div>
   <div class="col-3">
     <div class="stat-card">
-      <div class="stat-num" style="color:#7c3aed;">{{ pts_jugadores }}</div>
+      <div class="stat-num" style="color:#7c3aed;">{{ pts_goleador_total }}</div>
       <div class="stat-lbl">Jugadores</div>
     </div>
   </div>
@@ -45,168 +43,165 @@
   </div>
 </div>
 
-<!-- Champion -->
-{% if perfil and perfil.campeon %}
-<div class="card-w card-w-p mb-3 d-flex align-items-center gap-3" style="border-color:#fde68a;background:#fffbeb;">
-  <span style="font-size:1.6rem;">🏆</span>
-  <div style="flex:1;">
-    <div style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:#9ca3af;">Campeón pronosticado</div>
-    <div style="font-weight:800;font-size:.95rem;">{{ perfil.campeon.emoji }} {{ perfil.campeon.nombre }}</div>
+<!-- ── TABLA DETALLE DE PRONÓSTICOS ── -->
+<div class="section-bar">Detalle de Pronóstico por Participante</div>
+<div class="detail-wrap mb-4">
+  <div class="detail-scroll">
+    <table class="detail-table">
+      <thead>
+        <tr>
+          <th class="left">Fecha Partido</th>
+          <th class="left">Resultado</th>
+          <th class="left">Pronóstico</th>
+          <th>Pts Ganador</th>
+          <th>Pts Exacto</th>
+          <th>Pts Penales</th>
+          <th>Pts Goleador</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in predicciones %}
+        <tr>
+          <td class="left" style="font-size:.78rem;color:#4a5568;">
+            {{ row.partido.pais_local.emoji }} {{ row.partido.pais_local.nombre }}
+            <span style="color:#9aa3ae;font-size:.72rem;"> vs </span>
+            {{ row.partido.pais_visitante.nombre }} {{ row.partido.pais_visitante.emoji }}
+            {% if row.partido.fecha %}
+            <div style="font-size:.65rem;color:#9aa3ae;">{{ row.partido.fecha|date:"d/m/Y H:i" }}</div>
+            {% endif %}
+          </td>
+          <td class="left">
+            {% if row.partido.jugado %}
+            <span style="font-weight:700;font-size:.88rem;">{{ row.partido.goles_local }}-{{ row.partido.goles_visitante }}</span>
+            {% if row.partido.hubo_penales %}
+            <span class="badge b-blue" style="font-size:.58rem;margin-left:.2rem;">pen. {{ row.partido.penales_local }}-{{ row.partido.penales_visitante }}</span>
+            {% endif %}
+            {% else %}
+            <span style="color:#9aa3ae;font-size:.8rem;">Pendiente</span>
+            {% endif %}
+          </td>
+          <td class="left">
+            <span style="font-weight:700;font-size:.88rem;
+              {% if row.desglose %}
+                {% if row.desglose.resultado > 0 %}color:#0D2B6E;
+                {% elif row.desglose.ganador > 0 %}color:#006847;
+                {% else %}color:#DC2626;{% endif %}
+              {% else %}color:#2563EB;{% endif %}">
+              {{ row.pron.goles_local }}-{{ row.pron.goles_visitante }}
+            </span>
+            {% if row.pron.predice_penales and row.partido.es_eliminatoria %}
+            <span class="badge b-blue" style="font-size:.55rem;margin-left:.2rem;">pen</span>
+            {% endif %}
+            {% if row.desglose %}
+              {% if row.desglose.resultado > 0 %}
+              <span class="badge b-wine ms-1" style="font-size:.55rem;">🎯 Exacto</span>
+              {% elif row.desglose.ganador > 0 %}
+              <span class="badge" style="font-size:.55rem;background:#f0fdf4;color:#16a34a;">✓</span>
+              {% else %}
+              <span class="badge b-gray" style="font-size:.55rem;">✗</span>
+              {% endif %}
+            {% endif %}
+          </td>
+          <!-- Pts Ganador -->
+          <td class="pts-cell {% if row.desglose and row.desglose.ganador > 0 %}pos{% else %}zero{% endif %}">
+            {% if row.desglose %}{{ row.desglose.ganador }}{% else %}—{% endif %}
+          </td>
+          <!-- Pts Exacto -->
+          <td class="pts-cell {% if row.desglose and row.desglose.resultado > 0 %}pos{% else %}zero{% endif %}">
+            {% if row.desglose %}{{ row.desglose.resultado }}{% else %}—{% endif %}
+          </td>
+          <!-- Pts Penales -->
+          <td class="pts-cell {% if row.desglose and row.desglose.penales > 0 %}pos{% else %}zero{% endif %}">
+            {% if row.desglose %}{{ row.desglose.penales }}{% else %}—{% endif %}
+          </td>
+          <!-- Pts Goleador -->
+          <td class="pts-cell {% if row.pts_goleador > 0 %}pos{% else %}zero{% endif %}"
+              style="{% if row.pts_goleador > 0 %}color:#7c3aed;{% endif %}">
+            {{ row.pts_goleador }}
+          </td>
+          <!-- Total -->
+          <td class="pts-total">
+            {% if row.desglose or row.pts_goleador %}
+            {{ row.total_row }}
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-4" style="color:#9aa3ae;">
+            No hay pronósticos registrados.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-  {% if perfil.puntos_campeon > 0 %}
-  <span class="badge-w bw-amber">+{{ perfil.puntos_campeon }} pts ✓</span>
-  {% endif %}
 </div>
-{% endif %}
 
-<!-- Player selections -->
+<!-- ── PUNTOS CAMPEON ── -->
+<div class="section-bar">Puntos Campeón</div>
+<div class="rank-table-wrap mb-4">
+  <table class="rank-table">
+    <thead>
+      <tr>
+        <th>Nombre Completo</th>
+        <th class="center">País</th>
+        <th class="center">Puntos</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% if perfil and perfil.campeon %}
+      <tr>
+        <td style="font-weight:700;">{{ target.get_full_name|default:target.username }}</td>
+        <td class="center">{{ perfil.campeon.emoji }} {{ perfil.campeon.nombre }}</td>
+        <td class="pts">{{ pts_campeon }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="3" class="text-center py-3" style="color:#9aa3ae;font-size:.82rem;">
+          Sin campeón seleccionado
+        </td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ── GOLEADORES DEFINIDOS ── -->
 {% if seleccion %}
-<div class="section-hdr">Jugadores seleccionados ({{ seleccion|length }}/{{ max_jugadores|default:"5" }})</div>
-<div class="card-w card-w-p mb-3">
-  {% for sel in seleccion %}
-  <div class="d-flex align-items-center gap-2 {% if not forloop.last %}mb-2 pb-2{% endif %}"
-       {% if not forloop.last %}style="border-bottom:1px solid #f3f4f6;"{% endif %}>
-    <span style="font-size:1.2rem;">{{ sel.jugador.pais.emoji }}</span>
-    <div style="flex:1;min-width:0;">
-      <div style="font-weight:600;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-        {{ sel.jugador.nombre_completo }}
-      </div>
-      <div style="font-size:.67rem;color:#9ca3af;">{{ sel.jugador.pais.nombre }}</div>
-    </div>
-    {% if sel.puntos_acumulados > 0 %}
-    <span class="badge-w bw-green">+{{ sel.puntos_acumulados }} pts</span>
-    {% elif sel.jugador.total_goles > 0 %}
-    <span class="badge-w bw-amber">⚽ {{ sel.jugador.total_goles }}</span>
-    {% else %}
-    <span class="badge-w bw-gray">0 goles</span>
-    {% endif %}
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
-
-<!-- Predictions — styled like the pronósticos screen but read-only -->
-<div class="section-hdr">Pronósticos partido a partido</div>
-
-{% if partidos %}
-{% for partido in partidos %}
-{% with pron=prons|get_item:partido.id %}
-{% if pron %}
-<div class="match-card mb-2">
-
-  <!-- Match header -->
-  <div class="d-flex align-items-center justify-content-between mb-2">
-    <span class="badge-w bw-gray">{{ partido.fase.descripcion }}</span>
-    <div class="d-flex align-items-center gap-2">
-      {% if partido.fecha %}
-      <span style="font-size:.67rem;color:#9ca3af;">{{ partido.fecha|date:"d M · H:i" }}</span>
-      {% endif %}
-      {% if partido.jugado %}
-      <span class="badge-w bw-green">FIN</span>
-      {% else %}
-      <span class="badge-w bw-blue">pendiente</span>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- Teams + scores displayed like the prediction screen -->
-  <div class="d-flex align-items-center gap-2">
-
-    <!-- Local team -->
-    <div style="flex:1;text-align:center;">
-      <span class="team-flag">{{ partido.pais_local.emoji }}</span>
-      <span class="team-name">{{ partido.pais_local.nombre }}</span>
-    </div>
-
-    <!-- Center: real result / user prediction boxes -->
-    <div style="flex:1.8;display:flex;align-items:center;justify-content:center;gap:.5rem;">
-
-      {% if partido.jugado %}
-      <!-- Real result box -->
-      <div style="text-align:center;">
-        <div style="display:flex;align-items:center;gap:.3rem;">
-          <div style="width:44px;height:44px;background:#f3f4f6;border:2px solid #e5e7eb;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:900;color:#111827;">{{ partido.goles_local }}</div>
-          <span style="font-size:1rem;font-weight:900;color:#e5e7eb;">-</span>
-          <div style="width:44px;height:44px;background:#f3f4f6;border:2px solid #e5e7eb;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:900;color:#111827;">{{ partido.goles_visitante }}</div>
-        </div>
-        {% if partido.hubo_penales %}
-        <div style="font-size:.6rem;color:#0369a1;text-align:center;margin-top:.15rem;">pen. {{ partido.penales_local }}-{{ partido.penales_visitante }}</div>
-        {% endif %}
-        <div style="font-size:.58rem;color:#9ca3af;text-align:center;margin-top:.1rem;text-transform:uppercase;letter-spacing:.4px;">resultado</div>
-      </div>
-
-      <!-- VS separator -->
-      <span style="font-size:.75rem;font-weight:700;color:#d1d5db;">▶</span>
-
-      <!-- User prediction box — colored by result -->
-      <div style="text-align:center;">
-        {% if pron.puntos >= 3 %}
-        {% with bc="#f0fdf4" border="#86efac" color="#16a34a" %}
-        <div style="display:flex;align-items:center;gap:.3rem;">
-          <div style="width:44px;height:44px;background:{{ bc }};border:2px solid {{ border }};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:900;color:{{ color }};">{{ pron.goles_local }}</div>
-          <span style="font-size:1rem;font-weight:900;color:#d1d5db;">-</span>
-          <div style="width:44px;height:44px;background:{{ bc }};border:2px solid {{ border }};border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:900;color:{{ color }};">{{ pron.goles_visitante }}</div>
-        </div>
-        {% endwith %}
-        <div style="font-size:.6rem;font-weight:700;color:#16a34a;text-align:center;margin-top:.15rem;">🎯 +3 exacto</div>
-        {% elif pron.puntos >= 1 %}
-        <div style="display:flex;align-items:center;gap:.3rem;">
-          <div style="width:44px;height:44px;background:#fffbeb;border:2px solid #fde68a;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:900;color:#d97706;">{{ pron.goles_local }}</div>
-          <span style="font-size:1rem;font-weight:900;color:#d1d5db;">-</span>
-          <div style="width:44px;height:44px;background:#fffbeb;border:2px solid #fde68a;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:900;color:#d97706;">{{ pron.goles_visitante }}</div>
-        </div>
-        <div style="font-size:.6rem;font-weight:700;color:#d97706;text-align:center;margin-top:.15rem;">✓ +{{ pron.puntos }}</div>
-        {% else %}
-        <div style="display:flex;align-items:center;gap:.3rem;">
-          <div style="width:44px;height:44px;background:#fef2f2;border:2px solid #fecaca;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:900;color:#dc2626;">{{ pron.goles_local }}</div>
-          <span style="font-size:1rem;font-weight:900;color:#d1d5db;">-</span>
-          <div style="width:44px;height:44px;background:#fef2f2;border:2px solid #fecaca;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:900;color:#dc2626;">{{ pron.goles_visitante }}</div>
-        </div>
-        <div style="font-size:.6rem;font-weight:700;color:#dc2626;text-align:center;margin-top:.15rem;">✗ 0 pts</div>
-        {% endif %}
-        <div style="font-size:.58rem;color:#9ca3af;text-align:center;margin-top:.1rem;text-transform:uppercase;letter-spacing:.4px;">pronóstico</div>
-      </div>
-
-      {% else %}
-      <!-- Match not played yet — show prediction in blue boxes -->
-      <div style="text-align:center;">
-        <div style="display:flex;align-items:center;gap:.3rem;">
-          <div style="width:44px;height:44px;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:900;color:#2563eb;">{{ pron.goles_local }}</div>
-          <span style="font-size:1rem;font-weight:900;color:#d1d5db;">-</span>
-          <div style="width:44px;height:44px;background:#eff6ff;border:2px solid #bfdbfe;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:900;color:#2563eb;">{{ pron.goles_visitante }}</div>
-        </div>
-        <div style="font-size:.58rem;color:#9ca3af;text-align:center;margin-top:.1rem;text-transform:uppercase;letter-spacing:.4px;">pronóstico</div>
-      </div>
-      {% endif %}
-
-    </div>
-
-    <!-- Visitante team -->
-    <div style="flex:1;text-align:center;">
-      <span class="team-flag">{{ partido.pais_visitante.emoji }}</span>
-      <span class="team-name">{{ partido.pais_visitante.nombre }}</span>
-    </div>
-
-  </div>
-
-  <!-- Penalty note -->
-  {% if pron.predice_penales and partido.es_eliminatoria %}
-  <div style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid #f3f4f6;font-size:.7rem;color:#0369a1;">
-    <i class="bi bi-bullseye me-1"></i>Predijo penales
-    {% if partido.jugado %}
-    — {% if pron.predice_penales == partido.hubo_penales %}<span style="color:#16a34a;">✓ correcto (+2)</span>{% else %}<span style="color:#dc2626;">✗ incorrecto</span>{% endif %}
-    {% endif %}
-  </div>
-  {% endif %}
-
-</div>
-{% endif %}
-{% endwith %}
-{% endfor %}
-{% else %}
-<div class="card-w card-w-p text-center py-5" style="color:#9ca3af;">
-  <div style="font-size:2.5rem;">✏️</div>
-  <p class="mt-2 mb-0">Este usuario no ha registrado pronósticos aún.</p>
+<div class="section-bar">Jugadores Seleccionados</div>
+<div class="rank-table-wrap mb-4">
+  <table class="rank-table">
+    <thead>
+      <tr>
+        <th>Jugador</th>
+        <th class="center">Goles en torneo</th>
+        <th class="center">Puntos ganados</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for sel in seleccion %}
+      <tr>
+        <td>
+          <span style="font-size:1rem;margin-right:.4rem;">{{ sel.jugador.pais.emoji }}</span>
+          <span style="font-weight:600;">{{ sel.jugador.pais.nombre }}</span>
+          <span style="color:#9aa3ae;font-size:.8rem;"> — {{ sel.jugador.nombre_completo }}</span>
+        </td>
+        <td class="center" style="font-weight:700;">
+          {% if sel.jugador.total_goles > 0 %}
+          ⚽ {{ sel.jugador.total_goles }}
+          {% else %}
+          <span style="color:#9aa3ae;">0</span>
+          {% endif %}
+        </td>
+        <td class="pts {% if sel.puntos_acumulados > 0 %}pos{% else %}zero{% endif %}">
+          {{ sel.puntos_acumulados }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% endif %}
 

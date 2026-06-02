@@ -22,20 +22,42 @@ def home(request):
 
 @login_required
 def pronosticos_usuario(request, username):
-    """Show ALL predictions for a user — played and upcoming."""
+    """Show ALL predictions with full point breakdown per match."""
     target = get_object_or_404(User, username=username, is_active=True)
 
-    # All predictions this user made, ordered by match date
     prons_qs = Pronostico.objects.filter(usuario=target).select_related(
-        'partido__pais_local', 'partido__pais_visitante', 'partido__fase'
+        'partido__pais_local', 'partido__pais_visitante', 'partido__fase',
+        'partido__estadio',
     ).order_by('partido__fecha')
 
-    prons = {p.partido_id: p for p in prons_qs}
+    # Build desglose per prediction
+    from django.db.models import Sum
+    seleccion_ids = set(target.jugadores_seleccionados.values_list('jugador_id', flat=True))
 
-    # Matches the user has predicted (both played and upcoming)
-    partidos = Partido.objects.filter(
-        id__in=prons.keys()
-    ).select_related('pais_local', 'pais_visitante', 'fase').order_by('fecha')
+    # Goleador pts per match
+    goleador_por_partido = {}
+    if seleccion_ids:
+        goles_qs = GolPartido.objects.filter(
+            jugador_id__in=seleccion_ids,
+            partido_id__in=[p.partido_id for p in prons_qs],
+            cantidad__gt=0,
+        ).values('partido_id').annotate(total=Sum('cantidad'))
+        for g in goles_qs:
+            goleador_por_partido[g['partido_id']] = g['total'] * 2
+
+    # Build enriched prediction list
+    predicciones = []
+    for pron in prons_qs:
+        desglose = pron.calcular_desglose() if pron.partido.jugado else None
+        pts_gol = goleador_por_partido.get(pron.partido_id, 0)
+        total_row = (desglose['total'] if desglose else 0) + pts_gol
+        predicciones.append({
+            'pron': pron,
+            'partido': pron.partido,
+            'desglose': desglose,
+            'pts_goleador': pts_gol,
+            'total_row': total_row,
+        })
 
     try:
         perfil = target.perfil
@@ -44,25 +66,22 @@ def pronosticos_usuario(request, username):
 
     seleccion = target.jugadores_seleccionados.select_related('jugador__pais').all()
 
-    from django.db.models import Sum
-    pts_pronosticos = target.pronosticos.filter(partido__jugado=True).aggregate(t=Sum('puntos'))['t'] or 0
-    pts_campeon     = perfil.puntos_campeon if perfil else 0
-    pts_jugadores   = target.jugadores_seleccionados.aggregate(t=Sum('puntos_acumulados'))['t'] or 0
-    total_prons     = prons_qs.count()
-    jugados_prons   = prons_qs.filter(partido__jugado=True).count()
+    pts_pronosticos = sum(r['desglose']['total'] for r in predicciones if r['desglose'])
+    pts_goleador_total = target.jugadores_seleccionados.aggregate(t=Sum('puntos_acumulados'))['t'] or 0
+    pts_campeon = perfil.puntos_campeon if perfil else 0
+    pts_total = pts_pronosticos + pts_goleador_total + pts_campeon
 
     return render(request, 'polla/pronosticos_usuario.html', {
         'target': target,
         'perfil': perfil,
-        'partidos': partidos,
-        'prons': prons,
+        'predicciones': predicciones,
         'seleccion': seleccion,
         'pts_pronosticos': pts_pronosticos,
         'pts_campeon': pts_campeon,
-        'pts_jugadores': pts_jugadores,
-        'pts_total': pts_pronosticos + pts_campeon + pts_jugadores,
-        'total_prons': total_prons,
-        'jugados_prons': jugados_prons,
+        'pts_goleador_total': pts_goleador_total,
+        'pts_total': pts_total,
+        'total_prons': len(predicciones),
+        'jugados_prons': sum(1 for r in predicciones if r['partido'].jugado),
     })
 
 

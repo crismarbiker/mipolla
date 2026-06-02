@@ -10,56 +10,56 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/polla.css' %}">
 </head>
-<body class="login-wrap">
+<body class="login-bg">
 
 <div class="login-box">
-  <!-- Logo -->
+  <!-- Country stripe -->
+  <div class="login-stripe mb-4" style="background:linear-gradient(90deg,#BF0D3E 33.3%,#002868 33.3% 66.6%,#006847 66.6%);"></div>
+
+  <!-- Logo / Brand -->
   <div class="text-center mb-4">
     {% if torneo.logo %}
     <img src="{{ torneo.logo.url }}" alt="{{ torneo.nombre }}" style="max-height:70px;max-width:240px;object-fit:contain;">
     {% else %}
-    <div class="login-logo mb-1">⚽</div>
+    <div style="font-size:3.2rem;line-height:1;margin-bottom:.4rem;">⚽</div>
     {% endif %}
-    <h1 class="fw-9 mt-2 mb-0" style="font-size:1.5rem;">{{ torneo.nombre }}</h1>
-    <p class="text-gray mb-0" style="font-size:.82rem;">{{ torneo.temporada }}</p>
-    <div style="height:3px;background:#2563eb;border-radius:999px;width:40px;margin:.75rem auto 0;"></div>
+    <h1 style="font-size:1.4rem;font-weight:900;color:#0D2B6E;margin:0;">{{ torneo.nombre }}</h1>
+    <p style="color:#9aa3ae;font-size:.82rem;margin:.2rem 0 0;">{{ torneo.temporada }} · USA 🇺🇸 · Canada 🇨🇦 · México 🇲🇽</p>
   </div>
 
-  <!-- Error -->
   {% if form.errors %}
-  <div class="alert alert-danger py-2 mb-3">
+  <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:.5rem .75rem;font-size:.8rem;color:#dc2626;margin-bottom:1rem;">
     <i class="bi bi-exclamation-circle me-1"></i>Usuario o contraseña incorrectos.
   </div>
   {% endif %}
 
-  <!-- Form -->
   <form method="post" autocomplete="on">
     {% csrf_token %}
-    <div class="field">
+    <div class="form-field">
       <label>Usuario</label>
       <div style="position:relative;">
-        <i class="bi bi-person" style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:#9ca3af;"></i>
+        <i class="bi bi-person" style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:#9aa3ae;"></i>
         <input type="text" name="username" placeholder="Tu número o usuario"
                autocomplete="username" autofocus required
-               style="padding-left:2.2rem;width:100%;padding-top:.5rem;padding-bottom:.5rem;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:8px;color:#111827;font-size:.875rem;">
+               style="padding-left:2.2rem;">
       </div>
     </div>
-    <div class="field">
+    <div class="form-field">
       <label>Contraseña</label>
       <div style="position:relative;">
-        <i class="bi bi-lock" style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:#9ca3af;"></i>
+        <i class="bi bi-lock" style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:#9aa3ae;"></i>
         <input type="password" name="password" placeholder="••••••"
                autocomplete="current-password" required
-               style="padding-left:2.2rem;width:100%;padding-top:.5rem;padding-bottom:.5rem;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:8px;color:#111827;font-size:.875rem;">
+               style="padding-left:2.2rem;">
       </div>
     </div>
-    <button type="submit" class="btn-polla btn-blue btn-full btn-lg-p mt-2">
+    <button type="submit" class="btn btn-wine btn-full btn-lg mt-2">
       <i class="bi bi-box-arrow-in-right"></i> Entrar
     </button>
   </form>
 
-  <p class="text-center mt-3 mb-0" style="font-size:.72rem;color:#9ca3af;">
-    <i class="bi bi-lock-fill me-1"></i>Solo participantes invitados
+  <p class="text-center mt-3 mb-0" style="font-size:.72rem;color:#9aa3ae;">
+    <i class="bi bi-lock-fill me-1"></i>Solo participantes invitados · Contacta al administrador
   </p>
 </div>
 
