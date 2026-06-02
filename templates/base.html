@@ -25,9 +25,15 @@
   <!-- Logo -->
   <a class="top-nav-brand" href="{% url 'polla:ranking' %}">
     {% if torneo.logo %}
-    <img src="{{ torneo.logo.url }}" alt="{{ torneo.nombre }}" style="max-height:34px;max-width:130px;object-fit:contain;">
+    {# Uploaded logo: show in white pill so it's visible on dark nav #}
+    <span style="background:#fff;border-radius:8px;padding:3px 8px;display:inline-flex;align-items:center;">
+      <img src="{{ torneo.logo.url }}" alt="{{ torneo.nombre }}" style="max-height:26px;max-width:120px;object-fit:contain;">
+    </span>
     {% else %}
-    <img src="{% static 'img/logo_mundial2026.png' %}" alt="Mundial 2026" style="max-height:34px;max-width:150px;object-fit:contain;filter:brightness(0) invert(1);">
+    {# Default: show Mundial 2026 logo in white pill #}
+    <span style="background:#fff;border-radius:8px;padding:3px 8px;display:inline-flex;align-items:center;">
+      <img src="{% static 'img/logo_mundial2026.png' %}" alt="Mundial 2026" style="max-height:26px;max-width:130px;object-fit:contain;">
+    </span>
     {% endif %}
   </a>
 

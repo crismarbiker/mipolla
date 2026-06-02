@@ -19,12 +19,11 @@
   <!-- Logo / Brand -->
   <div class="text-center mb-4">
     {% if torneo.logo %}
-    <img src="{{ torneo.logo.url }}" alt="{{ torneo.nombre }}" style="max-height:70px;max-width:240px;object-fit:contain;">
+    <img src="{{ torneo.logo.url }}" alt="{{ torneo.nombre }}" style="max-height:80px;max-width:280px;object-fit:contain;margin-bottom:.5rem;">
     {% else %}
-    <div style="font-size:3.2rem;line-height:1;margin-bottom:.4rem;">⚽</div>
+    <img src="{% static 'img/logo_mundial2026.png' %}" alt="Mundial 2026"
+         style="max-height:80px;max-width:280px;object-fit:contain;margin-bottom:.5rem;">
     {% endif %}
-    <h1 style="font-size:1.4rem;font-weight:900;color:#0D2B6E;margin:0;">{{ torneo.nombre }}</h1>
-    <p style="color:#9aa3ae;font-size:.82rem;margin:.2rem 0 0;">{{ torneo.temporada }} · USA 🇺🇸 · Canada 🇨🇦 · México 🇲🇽</p>
   </div>
 
   {% if form.errors %}
