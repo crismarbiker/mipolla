@@ -16,30 +16,52 @@ def _es_admin(user):
 
 @login_required
 def home(request):
-    proximos = Partido.objects.filter(jugado=False).select_related(
+    # Home IS the ranking
+    return redirect('polla:ranking')
+
+
+@login_required
+def pronosticos_usuario(request, username):
+    """Show all predictions for a specific user (transparency view)."""
+    target = get_object_or_404(User, username=username, is_active=True)
+
+    partidos_jugados = Partido.objects.filter(jugado=True).select_related(
         'pais_local', 'pais_visitante', 'fase'
-    ).order_by('fecha')[:6]
+    ).order_by('fecha')
 
-    recientes = Partido.objects.filter(jugado=True).select_related(
-        'pais_local', 'pais_visitante'
-    ).order_by('-fecha')[:6]
+    prons = {
+        p.partido_id: p
+        for p in Pronostico.objects.filter(usuario=target).select_related('partido')
+    }
 
-    user_pronosticos = set(request.user.pronosticos.values_list('partido_id', flat=True))
-    top_ranking = _calcular_ranking()[:5]
+    try:
+        perfil = target.perfil
+    except PerfilUsuario.DoesNotExist:
+        perfil = None
 
-    user_pos = None
-    for i, d in enumerate(top_ranking):
-        if d['usuario'] == request.user:
-            user_pos = i + 1
-            break
+    seleccion = target.jugadores_seleccionados.select_related('jugador__pais').all()
 
-    return render(request, 'polla/home.html', {
-        'proximos': proximos,
-        'recientes': recientes,
-        'user_pronosticos': user_pronosticos,
-        'top_ranking': top_ranking,
-        'user_pos': user_pos,
+    from django.db.models import Sum
+    pts_pronosticos = target.pronosticos.filter(partido__jugado=True).aggregate(t=Sum('puntos'))['t'] or 0
+    pts_campeon     = perfil.puntos_campeon if perfil else 0
+    pts_jugadores   = target.jugadores_seleccionados.aggregate(t=Sum('puntos_acumulados'))['t'] or 0
+
+    return render(request, 'polla/pronosticos_usuario.html', {
+        'target': target,
+        'perfil': perfil,
+        'partidos': partidos_jugados,
+        'prons': prons,
+        'seleccion': seleccion,
+        'pts_pronosticos': pts_pronosticos,
+        'pts_campeon': pts_campeon,
+        'pts_jugadores': pts_jugadores,
+        'pts_total': pts_pronosticos + pts_campeon + pts_jugadores,
     })
+
+
+@login_required
+def reglas(request):
+    return render(request, 'polla/reglas.html')
 
 
 @login_required
@@ -190,7 +212,19 @@ def _calcular_ranking():
 @login_required
 def ranking(request):
     datos = _calcular_ranking()
-    return render(request, 'polla/ranking.html', {'datos': datos})
+    proximos = Partido.objects.filter(jugado=False).select_related(
+        'pais_local', 'pais_visitante', 'fase'
+    ).order_by('fecha')[:4]
+    recientes = Partido.objects.filter(jugado=True).select_related(
+        'pais_local', 'pais_visitante'
+    ).order_by('-fecha')[:4]
+    user_prons = set(request.user.pronosticos.values_list('partido_id', flat=True))
+    return render(request, 'polla/ranking.html', {
+        'datos': datos,
+        'proximos': proximos,
+        'recientes': recientes,
+        'user_prons': user_prons,
+    })
 
 
 @login_required
@@ -330,7 +364,7 @@ def webhook_whatsapp(request):
 
     # ── Keyword "clave" → handle locally, don't forward ──
     if texto == 'clave':
-        from .whatsapp import normalizar_telefono, generar_password, enviar_credenciales_whatsapp
+        from .whatsapp import normalizar_telefono, generar_password, enviar_nueva_clave_whatsapp
         telefono = normalizar_telefono(key.get('remoteJid', '').split('@')[0])
         try:
             user = User.objects.get(username=telefono, is_active=True)
@@ -338,7 +372,7 @@ def webhook_whatsapp(request):
             user.set_password(nueva_clave)
             user.save()
             nombre = user.get_full_name() or user.first_name or telefono
-            enviar_credenciales_whatsapp(telefono, nombre, telefono, nueva_clave)
+            enviar_nueva_clave_whatsapp(telefono, nombre, nueva_clave)
         except User.DoesNotExist:
             pass  # unknown number — silently ignore
         return JsonResponse({'ok': True})

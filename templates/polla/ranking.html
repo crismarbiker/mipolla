@@ -1,104 +1,174 @@
 {% extends 'base.html' %}
-{% block title %}Ranking — Mi Polla 2026{% endblock %}
+{% load polla_extras %}
+{% block title %}Ranking — {{ torneo.nombre }} {{ torneo.temporada }}{% endblock %}
 
 {% block content %}
+<!-- Hero -->
 <div class="page-hero px-3">
-  <h1><i class="bi bi-trophy-fill text-warning me-2"></i>Ranking</h1>
-  <p class="text-muted small mb-0">{{ datos|length }} participante{% if datos|length != 1 %}s{% endif %}</p>
+  <h1><i class="bi bi-trophy-fill text-gold me-2"></i>Ranking</h1>
+  <p class="text-muted mb-0" style="font-size:.78rem;">
+    {{ datos|length }} participante{% if datos|length != 1 %}s{% endif %} · Toca un nombre para ver sus pronósticos
+  </p>
 </div>
 
-<div class="px-3 py-3">
+<div class="px-3 pt-3">
 
-  <!-- Podium top 3 -->
-  {% if datos|length >= 3 %}
-  <div class="d-flex align-items-end justify-content-center gap-3 mb-4 py-3">
-    <!-- 2nd -->
-    <div class="text-center" style="flex:1;">
-      <div class="rank-avatar mx-auto mb-2" style="width:52px;height:52px;font-size:1.1rem;background:linear-gradient(135deg,#6b7280,#9ca3af);">
-        {{ datos.1.usuario.first_name|first|upper }}{{ datos.1.usuario.last_name|first|upper }}
+<!-- ── Próximos / Recientes (mini strip) ── -->
+{% if proximos or recientes %}
+<div class="row g-2 mb-3">
+  {% if proximos %}
+  <div class="col-12">
+    <div class="section-label">Próximos</div>
+    <div style="overflow-x:auto;scrollbar-width:none;display:flex;gap:.5rem;padding-bottom:.25rem;">
+      {% for p in proximos %}
+      <div class="card flex-shrink-0" style="min-width:160px;border-radius:var(--r-md) !important;">
+        <div class="card-body p-2 text-center">
+          <div style="font-size:.65rem;color:var(--muted);">{{ p.fase.descripcion }}</div>
+          <div class="d-flex align-items-center justify-content-center gap-2 my-1">
+            <span style="font-size:1.4rem;">{{ p.pais_local.emoji }}</span>
+            <span class="text-muted fw-bold" style="font-size:.75rem;">vs</span>
+            <span style="font-size:1.4rem;">{{ p.pais_visitante.emoji }}</span>
+          </div>
+          {% if p.id in user_prons %}
+          <span class="badge badge-success" style="font-size:.55rem;">✓ Pronosticado</span>
+          {% elif p.abierto %}
+          <a href="{% url 'polla:pronosticos' %}" class="badge badge-gold text-decoration-none" style="font-size:.55rem;">Pronosticar</a>
+          {% else %}
+          <span class="badge badge-muted" style="font-size:.55rem;">🔒 Cerrado</span>
+          {% endif %}
+          {% if p.fecha %}
+          <div class="text-muted mt-1" style="font-size:.6rem;">{{ p.fecha|date:"d M · H:i" }}</div>
+          {% endif %}
+        </div>
       </div>
-      <div style="font-size:2rem;">🥈</div>
-      <div class="fw-bold small">{{ datos.1.usuario.get_full_name|default:datos.1.usuario.username|truncatechars:12 }}</div>
-      <div class="text-warning fw-black" style="font-size:1.2rem;">{{ datos.1.puntos }}</div>
-      <div class="text-muted" style="font-size:.65rem;">pts</div>
-    </div>
-    <!-- 1st -->
-    <div class="text-center" style="flex:1;">
-      <div class="rank-avatar mx-auto mb-2" style="width:64px;height:64px;font-size:1.3rem;background:linear-gradient(135deg,#b22234,#0057a8);box-shadow:0 0 20px rgba(240,192,64,.4);">
-        {{ datos.0.usuario.first_name|first|upper }}{{ datos.0.usuario.last_name|first|upper }}
-      </div>
-      <div style="font-size:2.5rem;">🥇</div>
-      <div class="fw-bold">{{ datos.0.usuario.get_full_name|default:datos.0.usuario.username|truncatechars:14 }}</div>
-      <div class="text-warning fw-black" style="font-size:1.6rem;">{{ datos.0.puntos }}</div>
-      <div class="text-muted" style="font-size:.65rem;">pts</div>
-    </div>
-    <!-- 3rd -->
-    <div class="text-center" style="flex:1;">
-      <div class="rank-avatar mx-auto mb-2" style="width:52px;height:52px;font-size:1.1rem;background:linear-gradient(135deg,#92400e,#cd7f32);">
-        {{ datos.2.usuario.first_name|first|upper }}{{ datos.2.usuario.last_name|first|upper }}
-      </div>
-      <div style="font-size:2rem;">🥉</div>
-      <div class="fw-bold small">{{ datos.2.usuario.get_full_name|default:datos.2.usuario.username|truncatechars:12 }}</div>
-      <div class="text-warning fw-black" style="font-size:1.2rem;">{{ datos.2.puntos }}</div>
-      <div class="text-muted" style="font-size:.65rem;">pts</div>
+      {% endfor %}
     </div>
   </div>
   {% endif %}
 
-  <!-- Full ranking list -->
-  <div class="section-title">Tabla completa</div>
-
-  {% for d in datos %}
-  <div class="rank-row {% if d.usuario == request.user %}me{% endif %}">
-    <span class="rank-pos {% if forloop.counter == 1 %}gold{% elif forloop.counter == 2 %}silver{% elif forloop.counter == 3 %}bronze{% endif %}">
-      {% if forloop.counter == 1 %}🥇
-      {% elif forloop.counter == 2 %}🥈
-      {% elif forloop.counter == 3 %}🥉
-      {% else %}{{ forloop.counter }}{% endif %}
-    </span>
-
-    <span class="rank-avatar"
-          style="background:linear-gradient(135deg,{% cycle '#b22234' '#0057a8' '#006847' '#7c3aed' '#0891b2' '#d97706' '#db2777' '#16a34a' %},{% cycle '#0057a8' '#006847' '#b22234' '#0891b2' '#7c3aed' '#16a34a' '#0891b2' '#d97706' %});">
-      {{ d.usuario.first_name|first|upper }}{{ d.usuario.last_name|first|upper }}
-    </span>
-
-    <div class="rank-info">
-      <div class="rank-name">
-        {{ d.usuario.get_full_name|default:d.usuario.username }}
-        {% if d.usuario == request.user %}
-        <span class="badge ms-1" style="background:rgba(240,192,64,.2);color:#f0c040;font-size:.55rem;">Tú</span>
-        {% endif %}
+  {% if recientes %}
+  <div class="col-12">
+    <div class="section-label">Resultados recientes</div>
+    <div style="overflow-x:auto;scrollbar-width:none;display:flex;gap:.5rem;padding-bottom:.25rem;">
+      {% for p in recientes %}
+      <div class="card flex-shrink-0" style="min-width:150px;border-radius:var(--r-md) !important;">
+        <div class="card-body p-2 text-center">
+          <div class="d-flex align-items-center justify-content-center gap-2">
+            <span style="font-size:1.2rem;">{{ p.pais_local.emoji }}</span>
+            <span class="fw-black text-gold" style="font-size:1rem;">{{ p.goles_local }}-{{ p.goles_visitante }}</span>
+            <span style="font-size:1.2rem;">{{ p.pais_visitante.emoji }}</span>
+          </div>
+          {% if p.hubo_penales %}
+          <div class="text-muted" style="font-size:.6rem;">pen. {{ p.penales_local }}-{{ p.penales_visitante }}</div>
+          {% endif %}
+        </div>
       </div>
-      <div class="rank-sub d-flex gap-2 flex-wrap">
-        <span><i class="bi bi-bullseye me-1" style="color:#4ade80;"></i>{{ d.exactos }} exactos</span>
-        <span><i class="bi bi-check2 me-1" style="color:#fbbf24;"></i>{{ d.acertados }} correctos</span>
-        <span class="text-muted">{{ d.jugados }} jugados</span>
-      </div>
-      <div class="d-flex gap-2 mt-1 flex-wrap">
-        {% if d.campeon %}
-        <span style="font-size:.65rem;color:var(--c-muted);">
-          🏆 {{ d.campeon.emoji }} {{ d.campeon.nombre }}
-        </span>
-        {% endif %}
-        {% if d.pts_jugadores > 0 %}
-        <span style="font-size:.65rem;" class="badge" style="background:rgba(124,58,237,.15);color:#c084fc;">
-          👟 +{{ d.pts_jugadores }} goles
-        </span>
-        {% endif %}
-      </div>
+      {% endfor %}
     </div>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
 
-    <div class="text-end">
+<!-- ── Podium ── -->
+{% if datos|length >= 3 %}
+<div class="d-flex align-items-end justify-content-center gap-3 mb-4 px-2">
+  <!-- 2nd -->
+  <div class="text-center" style="flex:1;">
+    <a href="{% url 'polla:pronosticos_usuario' datos.1.usuario.username %}" class="text-decoration-none">
+      <div class="rank-avatar mx-auto mb-1"
+           style="width:50px;height:50px;font-size:1rem;background:linear-gradient(135deg,#6b7280,#9ca3af);">
+        {{ datos.1.usuario.first_name|first|upper }}{{ datos.1.usuario.last_name|first|upper }}
+      </div>
+      <div style="font-size:1.8rem;">🥈</div>
+      <div class="fw-bold text-muted" style="font-size:.78rem;">{{ datos.1.usuario.get_full_name|default:datos.1.usuario.username|truncatechars:12 }}</div>
+      <div class="rank-pts" style="font-size:1.2rem;">{{ datos.1.puntos }}</div>
+    </a>
+  </div>
+  <!-- 1st -->
+  <div class="text-center" style="flex:1.1;">
+    <a href="{% url 'polla:pronosticos_usuario' datos.0.usuario.username %}" class="text-decoration-none">
+      <div class="rank-avatar mx-auto mb-1"
+           style="width:62px;height:62px;font-size:1.2rem;background:linear-gradient(135deg,var(--primary),var(--secondary));box-shadow:0 0 18px var(--primary-glow);">
+        {{ datos.0.usuario.first_name|first|upper }}{{ datos.0.usuario.last_name|first|upper }}
+      </div>
+      <div style="font-size:2.2rem;">🥇</div>
+      <div class="fw-bold" style="font-size:.85rem;">{{ datos.0.usuario.get_full_name|default:datos.0.usuario.username|truncatechars:14 }}</div>
+      <div class="rank-pts">{{ datos.0.puntos }}</div>
+    </a>
+  </div>
+  <!-- 3rd -->
+  <div class="text-center" style="flex:1;">
+    <a href="{% url 'polla:pronosticos_usuario' datos.2.usuario.username %}" class="text-decoration-none">
+      <div class="rank-avatar mx-auto mb-1"
+           style="width:50px;height:50px;font-size:1rem;background:linear-gradient(135deg,#92400e,#cd7f32);">
+        {{ datos.2.usuario.first_name|first|upper }}{{ datos.2.usuario.last_name|first|upper }}
+      </div>
+      <div style="font-size:1.8rem;">🥉</div>
+      <div class="fw-bold text-muted" style="font-size:.78rem;">{{ datos.2.usuario.get_full_name|default:datos.2.usuario.username|truncatechars:12 }}</div>
+      <div class="rank-pts" style="font-size:1.2rem;">{{ datos.2.puntos }}</div>
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Full table ── -->
+<div class="section-label mb-2">Tabla completa</div>
+
+{% for d in datos %}
+<a href="{% url 'polla:pronosticos_usuario' d.usuario.username %}"
+   class="rank-row text-decoration-none {% if d.usuario == request.user %}me{% endif %}"
+   style="display:flex;">
+  <!-- Position -->
+  <span class="rank-pos {% if forloop.counter == 1 %}text-gold{% elif forloop.counter == 2 %}text-muted{% elif forloop.counter == 3 %}text-muted{% endif %}">
+    {% if forloop.counter == 1 %}🥇
+    {% elif forloop.counter == 2 %}🥈
+    {% elif forloop.counter == 3 %}🥉
+    {% else %}{{ forloop.counter }}{% endif %}
+  </span>
+
+  <!-- Avatar -->
+  <span class="rank-avatar"
+        style="background:linear-gradient(135deg,{% cycle 'var(--primary)' '#10b981' '#f59e0b' '#ef4444' '#38bdf8' '#a855f7' %},{% cycle '#10b981' 'var(--primary)' '#ef4444' '#38bdf8' '#a855f7' '#f59e0b' %});">
+    {{ d.usuario.first_name|first|upper }}{{ d.usuario.last_name|first|upper }}
+  </span>
+
+  <!-- Info -->
+  <div class="rank-info">
+    <div class="rank-name d-flex align-items-center gap-1">
+      {{ d.usuario.get_full_name|default:d.usuario.username }}
+      {% if d.usuario == request.user %}
+      <span class="badge badge-primary ms-1" style="font-size:.55rem;">Tú</span>
+      {% endif %}
+    </div>
+    <div class="rank-sub">
+      <span title="Exactos">🎯 {{ d.exactos }}</span>
+      <span class="ms-2" title="Correctos">✓ {{ d.acertados }}</span>
+      <span class="ms-2 text-muted">{{ d.jugados }} jugados</span>
+      {% if d.pts_jugadores > 0 %}
+      <span class="ms-2" title="Puntos de jugadores" style="color:#a855f7;">👟 +{{ d.pts_jugadores }}</span>
+      {% endif %}
+    </div>
+    {% if d.campeon %}
+    <div style="font-size:.65rem;color:var(--muted);">🏆 {{ d.campeon.emoji }} {{ d.campeon.nombre }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Points + arrow -->
+  <div class="text-end d-flex align-items-center gap-2">
+    <div>
       <div class="rank-pts">{{ d.puntos }}</div>
       <div class="text-muted" style="font-size:.6rem;">pts</div>
     </div>
+    <i class="bi bi-chevron-right text-muted" style="font-size:.8rem;"></i>
   </div>
-  {% empty %}
-  <div class="text-center py-5 text-muted">
-    <div style="font-size:3rem;">📊</div>
-    <p class="mt-2">Aún no hay puntuaciones</p>
-  </div>
-  {% endfor %}
+</a>
+{% empty %}
+<div class="text-center py-5 text-muted">
+  <div style="font-size:3rem;">📊</div>
+  <p class="mt-2">Aún no hay puntuaciones.</p>
+</div>
+{% endfor %}
 
 </div>
 {% endblock %}

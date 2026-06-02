@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Reglas — {{ torneo.nombre }} {{ torneo.temporada }}{% endblock %}
+
+{% block content %}
+<div class="page-hero px-3">
+  <h1><i class="bi bi-book-fill me-2" style="color:var(--primary);"></i>Reglas del juego</h1>
+  <p class="text-muted mb-0" style="font-size:.78rem;">{{ torneo.nombre }} {{ torneo.temporada }}</p>
+</div>
+
+<div class="px-3 py-3" style="max-width:600px;margin:0 auto;">
+
+  <!-- How to play -->
+  <div class="card mb-3">
+    <div class="card-header"><i class="bi bi-play-circle me-2 text-primary"></i>¿Cómo funciona?</div>
+    <div class="card-body p-3" style="font-size:.85rem;line-height:1.7;">
+      <p>Pronostica el resultado de cada partido <strong>antes de que empiece</strong>. Cuantos más partidos aciertes, más puntos sumás. Al final gana quien tenga más puntos.</p>
+      <p class="mb-0">Además podés elegir hasta <strong>5 jugadores</strong> del torneo — cada gol que metan en cualquier partido te da puntos extra.</p>
+    </div>
+  </div>
+
+  <!-- Scoring -->
+  <div class="card mb-3">
+    <div class="card-header"><i class="bi bi-star-fill me-2 text-gold"></i>Tabla de puntos</div>
+    <div class="card-body p-3">
+      <div class="d-flex flex-column gap-2" style="font-size:.85rem;">
+        <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid var(--border);">
+          <div>
+            <div class="fw-bold">Resultado exacto</div>
+            <div class="text-muted" style="font-size:.75rem;">Ej: pronosticaste 2-1, terminó 2-1</div>
+          </div>
+          <span class="badge badge-success" style="font-size:.85rem;">+3 pts</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid var(--border);">
+          <div>
+            <div class="fw-bold">Ganador o empate correcto</div>
+            <div class="text-muted" style="font-size:.75rem;">Ej: pronosticaste 1-0, terminó 2-0</div>
+          </div>
+          <span class="badge badge-gold" style="font-size:.85rem;">+2 pts</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid var(--border);">
+          <div>
+            <div class="fw-bold">Penales <span class="badge badge-muted">Solo eliminatorias</span></div>
+            <div class="text-muted" style="font-size:.75rem;">Predecís si habrá penales o no, y acertás</div>
+          </div>
+          <span class="badge badge-info" style="font-size:.85rem;">+2 pts</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid var(--border);">
+          <div>
+            <div class="fw-bold">Gol de tu jugador seleccionado</div>
+            <div class="text-muted" style="font-size:.75rem;">Por cada gol que anote en cualquier partido</div>
+          </div>
+          <span class="badge" style="background:rgba(168,85,247,.2);color:#a855f7;font-size:.85rem;">+2 pts</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid var(--border);">
+          <div>
+            <div class="fw-bold">Campeón correcto</div>
+            <div class="text-muted" style="font-size:.75rem;">El equipo que predijiste gana el torneo</div>
+          </div>
+          <span class="badge badge-gold" style="font-size:.85rem;">+15 pts</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center pt-2">
+          <div>
+            <div class="fw-bold text-muted">Resultado errado</div>
+          </div>
+          <span class="badge badge-muted" style="font-size:.85rem;">0 pts</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Penalty rule detail -->
+  <div class="card mb-3" style="border-color:var(--info-dim) !important;">
+    <div class="card-header"><i class="bi bi-bullseye me-2 text-info"></i>Regla de penales (eliminatorias)</div>
+    <div class="card-body p-3" style="font-size:.82rem;line-height:1.7;">
+      <p>En eliminatorias el partido <strong>siempre tiene ganador</strong>. Si hay empate se van a penales.</p>
+      <p>El marcador final que se compara con tu pronóstico es la <strong>suma de todos los goles</strong>, incluyendo los de la tanda de penales.</p>
+      <p class="mb-0"><strong>Ejemplo:</strong> Terminó 1-1 en tiempo reglamentario y en penales 4-3. El marcador final es <strong>5-4</strong>. Si pronosticaste 5-4 ganás 3 pts. Si además marcaste que habría penales, ganás 2 pts extra.</p>
+    </div>
+  </div>
+
+  <!-- Deadlines -->
+  <div class="card mb-3" style="border-color:rgba(239,68,68,.3) !important;">
+    <div class="card-header"><i class="bi bi-clock-fill me-2 text-danger"></i>Plazos importantes</div>
+    <div class="card-body p-3">
+      <div class="d-flex flex-column gap-2" style="font-size:.82rem;">
+        <div class="d-flex gap-3 py-2 align-items-start" style="border-bottom:1px solid var(--border);">
+          <span style="font-size:1.3rem;flex-shrink:0;">⏱️</span>
+          <div>
+            <div class="fw-bold">Pronóstico de cada partido</div>
+            <div class="text-muted">Podés modificarlo hasta el momento exacto en que inicia el partido. Una vez que empieza, se cierra.</div>
+          </div>
+        </div>
+        <div class="d-flex gap-3 py-2 align-items-start">
+          <span style="font-size:1.3rem;flex-shrink:0;">🔒</span>
+          <div>
+            <div class="fw-bold">Jugadores y campeón</div>
+            <div class="text-muted">Solo podés cambiarlos <strong>antes del primer partido del torneo</strong>. Una vez que inicia el torneo, quedan fijos para siempre.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tips -->
+  <div class="card mb-4" style="background:var(--surface) !important;">
+    <div class="card-body p-3">
+      <div class="fw-bold mb-2"><i class="bi bi-lightbulb-fill me-2 text-gold"></i>Consejos</div>
+      <ul class="mb-0 ps-3" style="font-size:.82rem;line-height:1.8;color:var(--muted);">
+        <li>Elegí jugadores delanteros o mediocampistas que suelen meter muchos goles</li>
+        <li>En eliminatorias aprovechá el bono de penales — tenés 50% de probabilidades si no estás seguro</li>
+        <li>El campeón vale mucho (+15) — pensalo bien</li>
+        <li>Todos los pronósticos son públicos al final, ¡así que no te achiques!</li>
+      </ul>
+    </div>
+  </div>
+
+  <a href="{% url 'polla:pronosticos' %}" class="btn btn-primary w-100 mb-4">
+    <i class="bi bi-pencil-square me-2"></i>Ir a mis pronósticos
+  </a>
+
+</div>
+{% endblock %}

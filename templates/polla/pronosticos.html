@@ -91,15 +91,17 @@
           <span class="team-flag" style="font-size:2.2rem;">{{ partido.pais_local.emoji }}</span>
           <span class="team-name" style="max-width:68px;">{{ partido.pais_local.nombre }}</span>
         </div>
+        {% with pron=user_pronosticos|get_item:partido.id %}
         <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-center">
           <input type="number" name="gl_{{ partido.id }}" min="0" max="20" class="score-input form-control"
-                 value="{% with pron=user_pronosticos|get_item:partido.id %}{% if pron %}{{ pron.goles_local }}{% endif %}{% endwith %}"
-                 placeholder="0" {% if not partido.abierto %}disabled{% endif %}>
+                 {% if pron is not None %}value="{{ pron.goles_local }}"{% endif %}
+                 placeholder="—" {% if not partido.abierto %}disabled{% endif %}>
           <span class="dash-sep">-</span>
           <input type="number" name="gv_{{ partido.id }}" min="0" max="20" class="score-input form-control"
-                 value="{% with pron=user_pronosticos|get_item:partido.id %}{% if pron %}{{ pron.goles_visitante }}{% endif %}{% endwith %}"
-                 placeholder="0" {% if not partido.abierto %}disabled{% endif %}>
+                 {% if pron is not None %}value="{{ pron.goles_visitante }}"{% endif %}
+                 placeholder="—" {% if not partido.abierto %}disabled{% endif %}>
         </div>
+        {% endwith %}
         <div class="team-block flex-shrink-0" style="min-width:60px;">
           <span class="team-flag" style="font-size:2.2rem;">{{ partido.pais_visitante.emoji }}</span>
           <span class="team-name" style="max-width:68px;">{{ partido.pais_visitante.nombre }}</span>

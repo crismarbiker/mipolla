@@ -28,8 +28,8 @@
       <img src="{{ torneo.logo.url }}" alt="{{ torneo.nombre }}" class="brand-logo">
       {% else %}
       <span class="brand-emoji">⚽</span>
-      {% endif %}
       <span>{{ torneo.nombre }}<span class="text-muted fw-normal ms-1" style="font-size:.75em;">{{ torneo.temporada }}</span></span>
+      {% endif %}
     </a>
   </div>
 
@@ -46,6 +46,9 @@
     </a>
     <a class="nav-link {% if request.resolver_match.url_name == 'ranking' %}active{% endif %}" href="{% url 'polla:ranking' %}">
       <i class="bi bi-trophy me-1"></i>Ranking
+    </a>
+    <a class="nav-link {% if request.resolver_match.url_name == 'reglas' %}active{% endif %}" href="{% url 'polla:reglas' %}">
+      <i class="bi bi-book me-1"></i>Reglas
     </a>
     {% if user.is_staff %}
     <div class="dropdown ms-1">

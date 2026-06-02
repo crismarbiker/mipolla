@@ -10,10 +10,9 @@ def _cfg(key, default=''):
 
 
 def generar_password() -> str:
-    """Generate a memorable secure password: Torneo2026#Xk7pQz"""
-    chars = string.ascii_letters + string.digits
-    aleatorio = ''.join(secrets.choice(chars) for _ in range(6))
-    return f"Torneo2026#{aleatorio}"
+    """Generate a 6-char password: uppercase letters + digits. Example: A7K2P9"""
+    chars = string.ascii_uppercase + string.digits
+    return ''.join(secrets.choice(chars) for _ in range(6))
 
 
 def normalizar_telefono(telefono: str) -> str:
@@ -53,12 +52,14 @@ def enviar_credenciales_whatsapp(
 
     jid = f"{numero}@s.whatsapp.net"
     mensaje = (
-        f"⚽ *{torneo_nombre}*\n\n"
-        f"Hola *{nombre}*, ya tienes acceso.\n\n"
-        f"🔗 *Enlace:* {app_url}\n"
-        f"👤 *Usuario:* `{username}`\n"
-        f"🔑 *Contraseña:* `{password}`\n\n"
-        f"_¡Buena suerte!_ 🏆"
+        f"⚽ *{torneo_nombre}* — ¡Bienvenido!\n\n"
+        f"Hola {nombre}! 👋 Ya estás adentro de la polla, que empiece el show 🎉\n\n"
+        f"Aquí tus datos pa entrar:\n"
+        f"🔗 {app_url}\n"
+        f"📱 *Usuario:* `{username}`\n"
+        f"🔑 *Clave:* `{password}`\n\n"
+        f"Si la perdés mandame la palabra *clave* y te mando una nueva 🔄\n\n"
+        f"¡Mucha suerte y que gane el mejor! 🏆⚽"
     )
 
     try:
@@ -77,6 +78,45 @@ def enviar_credenciales_whatsapp(
         return False, 'Timeout al conectar con Evolution API (10 s).'
     except Exception as e:
         return False, f'Error inesperado: {e}'
+
+
+def enviar_nueva_clave_whatsapp(telefono: str, nombre: str, password: str) -> None:
+    """Send a password recovery message — friendlier, shorter tone."""
+    api_url  = _cfg('EVOLUTION_API_URL',  '')
+    api_key  = _cfg('EVOLUTION_API_KEY',  '')
+    instance = _cfg('EVOLUTION_INSTANCE', '')
+    app_url  = _cfg('APP_URL', 'https://www.elcarguero.com/MiPolla/')
+
+    if not api_key:
+        return
+
+    numero = normalizar_telefono(telefono)
+    if not numero:
+        return
+
+    try:
+        from .models import TorneoConfig
+        torneo_nombre = str(TorneoConfig.get())
+    except Exception:
+        torneo_nombre = 'Mi Polla'
+
+    mensaje = (
+        f"🔑 *{torneo_nombre}* — Nueva clave\n\n"
+        f"Hola {nombre}! 👋 Aquí va:\n\n"
+        f"📱 *Usuario:* `{numero}`\n"
+        f"🔑 *Clave:* `{password}`\n\n"
+        f"🔗 {app_url}\n\n"
+        f"¡Entra antes de que empiece el próximo partido! ⏰"
+    )
+    try:
+        requests.post(
+            f"{api_url}/message/sendText/{instance}",
+            json={"number": f"{numero}@s.whatsapp.net", "text": mensaje},
+            headers={"apikey": api_key},
+            timeout=8,
+        )
+    except Exception:
+        pass
 
 
 def registrar_webhook(webhook_url: str) -> tuple[bool, str]:

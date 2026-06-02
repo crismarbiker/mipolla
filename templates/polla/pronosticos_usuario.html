@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load polla_extras %}
+{% block title %}{{ target.get_full_name|default:target.username }} — Pronósticos{% endblock %}
+
+{% block content %}
+<div class="page-hero px-3">
+  <div class="d-flex align-items-center gap-3">
+    <a href="{% url 'polla:ranking' %}" class="btn btn-ghost btn-icon">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h1 style="font-size:1.2rem;">{{ target.get_full_name|default:target.username }}</h1>
+      <p class="text-muted mb-0" style="font-size:.75rem;">Transparencia de pronósticos</p>
+    </div>
+  </div>
+</div>
+
+<div class="px-3 py-3">
+
+  <!-- Points summary -->
+  <div class="row g-2 mb-4">
+    <div class="col-4">
+      <div class="stat-card">
+        <div class="stat-num text-gold">{{ pts_total }}</div>
+        <div class="stat-lbl">Total pts</div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="stat-card">
+        <div class="stat-num" style="color:var(--success);">{{ pts_pronosticos }}</div>
+        <div class="stat-lbl">Partidos</div>
+      </div>
+    </div>
+    <div class="col-4">
+      <div class="stat-card">
+        <div class="stat-num" style="color:#a855f7;">{{ pts_jugadores }}</div>
+        <div class="stat-lbl">Jugadores</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Champion prediction -->
+  {% if perfil and perfil.campeon %}
+  <div class="card mb-3" style="border-color:rgba(245,158,11,.3) !important;">
+    <div class="card-body p-3 d-flex align-items-center gap-3">
+      <span style="font-size:1.8rem;">🏆</span>
+      <div>
+        <div class="section-label">Campeón pronosticado</div>
+        <div class="fw-bold" style="font-size:1rem;">{{ perfil.campeon.emoji }} {{ perfil.campeon.nombre }}</div>
+        {% if perfil.puntos_campeon > 0 %}
+        <span class="badge badge-gold">+{{ perfil.puntos_campeon }} pts ✓</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Player selections -->
+  {% if seleccion %}
+  <div class="section-label mb-2">Jugadores seleccionados</div>
+  <div class="card mb-4">
+    <div class="card-body p-3">
+      {% for sel in seleccion %}
+      <div class="d-flex align-items-center gap-2 mb-2 {% if not forloop.last %}pb-2{% endif %}"
+           {% if not forloop.last %}style="border-bottom:1px solid var(--border);"{% endif %}>
+        <span style="font-size:1.3rem;">{{ sel.jugador.pais.emoji }}</span>
+        <div class="flex-grow-1">
+          <div class="fw-semibold" style="font-size:.82rem;">{{ sel.jugador.nombre_completo }}</div>
+          <div class="text-muted" style="font-size:.68rem;">{{ sel.jugador.pais.nombre }}</div>
+        </div>
+        {% if sel.puntos_acumulados > 0 %}
+        <span class="badge badge-success">+{{ sel.puntos_acumulados }} pts</span>
+        {% elif sel.jugador.total_goles > 0 %}
+        <span class="badge badge-gold">{{ sel.jugador.total_goles }} ⚽</span>
+        {% else %}
+        <span class="badge badge-muted">0 goles</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Match predictions -->
+  <div class="section-label mb-2">Pronósticos por partido ({{ partidos|length }} jugados)</div>
+
+  {% for partido in partidos %}
+  {% with pron=prons|get_item:partido.id %}
+  <div class="match-card mb-2">
+    <div class="d-flex align-items-center justify-content-between mb-1">
+      <span class="badge badge-muted" style="font-size:.6rem;">{{ partido.fase.descripcion }}</span>
+      {% if partido.fecha %}<span class="text-muted" style="font-size:.65rem;">{{ partido.fecha|date:"d M" }}</span>{% endif %}
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <!-- Local -->
+      <div class="team-col">
+        <span class="team-flag">{{ partido.pais_local.emoji }}</span>
+        <span class="team-name">{{ partido.pais_local.nombre }}</span>
+      </div>
+
+      <!-- Real result -->
+      <div class="score-col" style="flex:1.2;">
+        <div class="score-big">{{ partido.goles_local }}-{{ partido.goles_visitante }}</div>
+        {% if partido.hubo_penales %}
+        <span style="font-size:.6rem;color:var(--info);">pen. {{ partido.penales_local }}-{{ partido.penales_visitante }}</span>
+        {% endif %}
+        <span class="text-muted" style="font-size:.6rem;">Resultado</span>
+      </div>
+
+      <!-- User prediction -->
+      <div class="score-col" style="flex:1.2;">
+        {% if pron %}
+        <div class="score-big {% if pron.puntos >= 3 %}text-success{% elif pron.puntos >= 2 %}text-gold{% elif pron.puntos >= 1 %}text-gold{% else %}text-muted{% endif %}"
+             style="font-size:1.4rem;">
+          {{ pron.goles_local }}-{{ pron.goles_visitante }}
+        </div>
+        {% if pron.puntos == 3 %}
+        <span class="badge badge-success">+3 exacto 🎯</span>
+        {% elif pron.puntos >= 2 and partido.es_eliminatoria and pron.predice_penales == partido.hubo_penales %}
+        <span class="badge badge-gold">+{{ pron.puntos }}</span>
+        {% elif pron.puntos >= 1 %}
+        <span class="badge badge-gold">+{{ pron.puntos }}</span>
+        {% else %}
+        <span class="badge badge-muted">0 pts</span>
+        {% endif %}
+        {% else %}
+        <div class="score-big text-muted" style="font-size:1.2rem;">—</div>
+        <span class="badge badge-muted">Sin pronóstico</span>
+        {% endif %}
+        <span class="text-muted" style="font-size:.6rem;">Pronóstico</span>
+      </div>
+
+      <!-- Visitante -->
+      <div class="team-col">
+        <span class="team-flag">{{ partido.pais_visitante.emoji }}</span>
+        <span class="team-name">{{ partido.pais_visitante.nombre }}</span>
+      </div>
+    </div>
+  </div>
+  {% endwith %}
+  {% empty %}
+  <div class="text-center py-4 text-muted">
+    <i class="bi bi-calendar3" style="font-size:2rem;"></i>
+    <p class="mt-2 small">Aún no hay partidos jugados.</p>
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}
