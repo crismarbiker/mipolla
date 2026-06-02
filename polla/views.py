@@ -242,8 +242,27 @@ def admin_usuarios(request):
                 )
             return redirect('polla:admin_usuarios')
 
+    from django.conf import settings as djsettings
     usuarios = User.objects.filter(is_staff=False).select_related('perfil').order_by('last_name', 'first_name')
-    return render(request, 'polla/admin_usuarios.html', {'usuarios': usuarios})
+    return render(request, 'polla/admin_usuarios.html', {
+        'usuarios': usuarios,
+        'wa_url':      getattr(djsettings, 'EVOLUTION_API_URL',  'http://elcarguero_evolution:8080'),
+        'wa_instance': getattr(djsettings, 'EVOLUTION_INSTANCE', 'elcarguero'),
+        'wa_key_ok':   bool(getattr(djsettings, 'EVOLUTION_API_KEY', '')),
+    })
+
+
+@login_required
+@user_passes_test(_es_admin)
+def admin_test_whatsapp(request):
+    """Quick connectivity check for the admin panel."""
+    from .whatsapp import verificar_conexion
+    ok, msg = verificar_conexion()
+    if ok:
+        messages.success(request, f'✅ {msg}')
+    else:
+        messages.error(request, f'❌ WhatsApp desconectado — {msg}')
+    return redirect('polla:admin_usuarios')
 
 
 @login_required
