@@ -152,6 +152,9 @@ def gran_pozo(request):
     # Get current ranking to show who would win
     ranking = _calcular_ranking()
 
+    # Only show podium/distribution when at least one user has points
+    hay_puntos = any(d['puntos'] > 0 for d in ranking)
+
     # ── Tie-splitting logic ──────────────────────────────────────────────────
     # Group positions by tied points
     grupos = []
@@ -197,7 +200,8 @@ def gran_pozo(request):
         'premio_3': premio_3,
         'descuento_pct': int(DESCUENTO * 100),
         'ranking': ranking[:3],
-        'posiciones': posiciones,   # enriched with tie info
+        'posiciones': posiciones,
+        'hay_puntos': hay_puntos,
     })
 
 

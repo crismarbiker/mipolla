@@ -24,8 +24,20 @@
   </div>
 </div>
 
-<!-- Podium -->
+<!-- Podium (only when matches have been played and points exist) -->
 <div class="px-3 py-4">
+  {% if not hay_puntos %}
+  <!-- No results yet -->
+  <div style="text-align:center;padding:2.5rem 1rem;">
+    <div style="font-size:3rem;margin-bottom:.5rem;">⏳</div>
+    <div style="font-weight:800;font-size:1.1rem;color:var(--text);margin-bottom:.3rem;">
+      Torneo en curso
+    </div>
+    <div style="font-size:.82rem;color:var(--muted);">
+      El podio y los premios se revelan cuando haya partidos con resultados registrados.
+    </div>
+  </div>
+  {% else %}
   <div class="d-flex align-items-end justify-content-center gap-2 mb-4">
 
     <!-- 2nd -->
@@ -135,6 +147,8 @@
       </tbody>
     </table>
   </div>
+
+  {% endif %}{# end hay_puntos #}
 
 </div>
 {% endblock %}
