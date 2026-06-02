@@ -18,4 +18,5 @@ urlpatterns = [
     path('admin/whatsapp/registrar/', views.admin_registrar_webhook, name='admin_registrar_webhook'),
     path('admin/eliminatorias/', views.admin_generar_eliminatorias, name='admin_generar_eliminatorias'),
     path('webhook/whatsapp/', views.webhook_whatsapp, name='webhook_whatsapp'),
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
 ]

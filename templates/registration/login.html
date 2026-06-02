@@ -57,8 +57,14 @@
     </button>
   </form>
 
-  <p class="text-center mt-3 mb-0" style="font-size:.72rem;color:#9aa3ae;">
-    <i class="bi bi-lock-fill me-1"></i>Solo participantes invitados · Contacta al administrador
+  <div class="text-center mt-3">
+    <a href="{% url 'polla:forgot_password' %}"
+       style="font-size:.8rem;color:var(--muted,#9aa3ae);text-decoration:none;display:inline-flex;align-items:center;gap:.3rem;">
+      <i class="bi bi-whatsapp text-success"></i> Olvidé mi contraseña
+    </a>
+  </div>
+  <p class="text-center mt-2 mb-0" style="font-size:.7rem;color:#6b7280;">
+    <i class="bi bi-lock-fill me-1"></i>Solo participantes invitados
   </p>
 </div>
 

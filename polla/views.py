@@ -90,6 +90,66 @@ def reglas(request):
     return render(request, 'polla/reglas.html')
 
 
+def forgot_password(request):
+    """Public page: enter phone number → receive new password via WhatsApp."""
+    sent = False
+    error = None
+
+    if request.method == 'POST':
+        from .whatsapp import normalizar_telefono, generar_password
+        from .models import PerfilUsuario
+
+        telefono_raw = request.POST.get('telefono', '').strip()
+        telefono = normalizar_telefono(telefono_raw)
+
+        if not telefono or len(telefono) != 11 or not telefono.startswith('591'):
+            error = 'Número inválido. Debe tener 11 dígitos comenzando con 591. Ej: 59170512621'
+        else:
+            try:
+                perfil = PerfilUsuario.objects.get(telefono=telefono)
+                user = perfil.usuario
+                if not user.is_active:
+                    error = 'Cuenta desactivada. Contacta al administrador.'
+                else:
+                    nueva = generar_password()
+                    user.set_password(nueva)
+                    user.save()
+                    _enviar_solo_clave(telefono, nueva)
+                    sent = True
+            except PerfilUsuario.DoesNotExist:
+                # Don't reveal if number exists or not (security)
+                sent = True  # show success anyway to avoid user enumeration
+
+    return render(request, 'registration/forgot_password.html', {
+        'sent': sent,
+        'error': error,
+    })
+
+
+def _enviar_solo_clave(telefono, clave):
+    """Send ONLY the new password — short, easy to copy."""
+    import requests as req
+    from django.conf import settings
+    api_url  = getattr(settings, 'EVOLUTION_API_URL',  '')
+    api_key  = getattr(settings, 'EVOLUTION_API_KEY',  '')
+    instance = getattr(settings, 'EVOLUTION_INSTANCE', '')
+    app_url  = getattr(settings, 'APP_URL', 'https://www.elcarguero.com/MiPolla/')
+
+    if not api_key:
+        return
+
+    mensaje = f"🔑 Tu nueva clave:\n\n*{clave}*\n\n{app_url}"
+    try:
+        req.post(
+            f"{api_url}/message/sendText/{instance}",
+            json={"number": f"{telefono}@s.whatsapp.net", "text": mensaje},
+            headers={"apikey": api_key},
+            timeout=8,
+        )
+    except Exception:
+        pass
+
+
 @login_required
 def partidos(request):
     fases = Fase.objects.prefetch_related(
@@ -204,8 +264,11 @@ def pronosticos(request):
 
 
 def _calcular_ranking():
+    # Only show non-admin users who have a valid 11-digit phone number
     usuarios = User.objects.filter(
-        is_active=True  # Include ALL users including staff/admin
+        is_active=True,
+        is_staff=False,
+        perfil__telefono__regex=r'^\d{11}$',
     ).prefetch_related('pronosticos', 'perfil', 'jugadores_seleccionados')
 
     datos = []
@@ -271,8 +334,10 @@ def admin_usuarios(request):
         error = None
         if not first_name:
             error = 'El nombre es requerido.'
-        elif not telefono or len(telefono) < 8:
-            error = 'Número de teléfono inválido (ingresa el número completo con código de país).'
+        elif not telefono or len(telefono) != 11:
+            error = f'El número debe tener exactamente 11 dígitos: código de país (591) + 8 dígitos. Ej: 59170512621. Tienes {len(telefono)} dígitos.'
+        elif not telefono.startswith('591'):
+            error = 'El código de país debe ser 591 (Bolivia). Ej: 59170512621'
         elif User.objects.filter(username=telefono).exists():
             error = f'Ya existe un usuario con el número {telefono}.'
 
@@ -406,20 +471,10 @@ def webhook_whatsapp(request):
         ''
     ).strip().lower()
 
-    # ── Keyword "clave" → handle locally, don't forward ──
+    # "clave" keyword disabled — use Forgot Password page instead
+    # (WhatsApp bot responses removed to avoid confusion)
     if texto == 'clave':
-        from .whatsapp import normalizar_telefono, generar_password, enviar_nueva_clave_whatsapp
-        telefono = normalizar_telefono(key.get('remoteJid', '').split('@')[0])
-        try:
-            user = User.objects.get(username=telefono, is_active=True)
-            nueva_clave = generar_password()
-            user.set_password(nueva_clave)
-            user.save()
-            nombre = user.get_full_name() or user.first_name or telefono
-            enviar_nueva_clave_whatsapp(telefono, nombre, nueva_clave)
-        except User.DoesNotExist:
-            pass  # unknown number — silently ignore
-        return JsonResponse({'ok': True})
+        return JsonResponse({'ok': True, 'ignored': 'use forgot-password page'})
 
     # ── Everything else → forward to ElCarguero backend ──
     return _forward_to_elcarguero(raw_body)
