@@ -79,6 +79,34 @@ def enviar_credenciales_whatsapp(
         return False, f'Error inesperado: {e}'
 
 
+def registrar_webhook(webhook_url: str) -> tuple[bool, str]:
+    """Register the webhook URL in Evolution API for MESSAGES_UPSERT events."""
+    api_url  = _cfg('EVOLUTION_API_URL',  '')
+    api_key  = _cfg('EVOLUTION_API_KEY',  '')
+    instance = _cfg('EVOLUTION_INSTANCE', '')
+
+    if not api_key:
+        return False, 'EVOLUTION_API_KEY no configurada.'
+
+    try:
+        resp = requests.put(
+            f"{api_url}/webhook/set/{instance}",
+            json={
+                "url": webhook_url,
+                "webhook_by_events": False,
+                "webhook_base64": False,
+                "events": ["MESSAGES_UPSERT"],
+            },
+            headers={"apikey": api_key},
+            timeout=8,
+        )
+        if resp.status_code in (200, 201):
+            return True, f'Webhook registrado en {instance}: {webhook_url}'
+        return False, f'API respondió {resp.status_code}: {resp.text[:120]}'
+    except Exception as e:
+        return False, f'Error: {e}'
+
+
 def verificar_conexion() -> tuple[bool, str]:
     """Check if Evolution API instance is online. Used by admin UI."""
     api_url  = _cfg('EVOLUTION_API_URL',  '')

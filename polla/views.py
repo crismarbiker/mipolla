@@ -255,14 +255,108 @@ def admin_usuarios(request):
 @login_required
 @user_passes_test(_es_admin)
 def admin_test_whatsapp(request):
-    """Quick connectivity check for the admin panel."""
     from .whatsapp import verificar_conexion
     ok, msg = verificar_conexion()
     if ok:
         messages.success(request, f'✅ {msg}')
     else:
-        messages.error(request, f'❌ WhatsApp desconectado — {msg}')
+        messages.error(request, f'❌ {msg}')
     return redirect('polla:admin_usuarios')
+
+
+@login_required
+@user_passes_test(_es_admin)
+def admin_registrar_webhook(request):
+    from .whatsapp import registrar_webhook
+    from django.conf import settings as djsettings
+    app_url = getattr(djsettings, 'APP_URL', 'https://www.elcarguero.com/MiPolla/')
+    webhook_url = app_url.rstrip('/') + '/webhook/whatsapp/'
+    ok, msg = registrar_webhook(webhook_url)
+    if ok:
+        messages.success(request, f'✅ {msg}')
+    else:
+        messages.error(request, f'❌ {msg}')
+    return redirect('polla:admin_usuarios')
+
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
+
+
+@csrf_exempt
+def webhook_whatsapp(request):
+    """
+    Evolution API sends incoming WhatsApp messages here.
+    If the message text is exactly "clave", we generate a new password
+    and send it back to the user.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'ok': True})
+
+    # Verify API key header (Evolution API sends apikey header)
+    from django.conf import settings as djsettings
+    api_key = getattr(djsettings, 'EVOLUTION_API_KEY', '')
+    if api_key:
+        req_key = request.headers.get('apikey', '')
+        if req_key != api_key:
+            return JsonResponse({'error': 'unauthorized'}, status=401)
+
+    try:
+        body = json.loads(request.body)
+    except (json.JSONDecodeError, Exception):
+        return JsonResponse({'ok': False, 'error': 'invalid json'})
+
+    # Only handle incoming message events
+    event = body.get('event', '')
+    if event not in ('messages.upsert', 'MESSAGES_UPSERT'):
+        return JsonResponse({'ok': True, 'ignored': event})
+
+    data = body.get('data', {})
+    key  = data.get('key', {})
+
+    # Skip messages I sent myself
+    if key.get('fromMe'):
+        return JsonResponse({'ok': True})
+
+    # Skip group messages
+    remote_jid = key.get('remoteJid', '')
+    if '@g.us' in remote_jid:
+        return JsonResponse({'ok': True})
+
+    # Extract text (handles plain text and extended text messages)
+    msg_obj = data.get('message', {})
+    texto = (
+        msg_obj.get('conversation') or
+        msg_obj.get('extendedTextMessage', {}).get('text') or
+        ''
+    ).strip().lower()
+
+    # Only react to "clave"
+    if texto != 'clave':
+        return JsonResponse({'ok': True, 'ignored': 'not keyword'})
+
+    # Extract phone number (strip @s.whatsapp.net and any non-digits)
+    from .whatsapp import normalizar_telefono, generar_password, enviar_credenciales_whatsapp
+    telefono = normalizar_telefono(remote_jid.split('@')[0])
+
+    # Find user by phone number (stored as username)
+    try:
+        user = User.objects.get(username=telefono, is_active=True)
+    except User.DoesNotExist:
+        # Don't respond to unknown numbers — avoids leaking info
+        return JsonResponse({'ok': True, 'ignored': 'user not found'})
+
+    # Generate and set new password
+    nueva_clave = generar_password()
+    user.set_password(nueva_clave)
+    user.save()
+
+    # Send new credentials via WhatsApp
+    nombre = user.get_full_name() or user.first_name or user.username
+    enviar_credenciales_whatsapp(telefono, nombre, telefono, nueva_clave)
+
+    return JsonResponse({'ok': True})
 
 
 @login_required
