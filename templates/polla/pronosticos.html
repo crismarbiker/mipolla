@@ -64,6 +64,11 @@
     {% csrf_token %}
     <input type="hidden" name="action" value="pronosticos">
 
+    <!-- SAVE BUTTON AT TOP -->
+    <button type="submit" class="btn btn-polla w-100 mb-3" style="position:sticky;top:calc(var(--nav-h) + 3px + 44px);z-index:98;box-shadow:0 4px 16px rgba(29,78,216,.4);">
+      <i class="bi bi-save2"></i> Guardar todos los pronósticos
+    </button>
+
     {% for partido in partidos %}
     <div class="score-input-wrap mb-3 {% if not partido.abierto %}opacity-60{% endif %}"
          style="{% if not partido.abierto %}border-color:rgba(122,148,180,.2);{% endif %}">

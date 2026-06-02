@@ -175,11 +175,12 @@ def pronosticos(request):
         messages.success(request, msg)
         return redirect('polla:pronosticos')
 
-    partidos_abiertos = Partido.objects.filter(jugado=False).select_related(
-        'pais_local', 'pais_visitante', 'fase'
-    ).order_by('fecha')
+    # ALL matches: open ones first, then closed-but-unplayed, then played (at bottom)
+    todos_partidos = Partido.objects.select_related('pais_local', 'pais_visitante', 'fase').order_by('fecha')
+    # Sort: abierto first (True=open, False=closed/played) then by fecha
+    partidos_abiertos = sorted(todos_partidos, key=lambda p: (not p.abierto, p.jugado, p.fecha or timezone.now()))
 
-    user_pronosticos = {p.partido_id: p for p in request.user.pronosticos.filter(partido__jugado=False)}
+    user_pronosticos = {p.partido_id: p for p in request.user.pronosticos.all()}
     perfil_form = PerfilForm(instance=perfil)
 
     # All players grouped by country for the selection UI
@@ -204,7 +205,7 @@ def pronosticos(request):
 
 def _calcular_ranking():
     usuarios = User.objects.filter(
-        is_active=True, is_staff=False
+        is_active=True  # Include ALL users including staff/admin
     ).prefetch_related('pronosticos', 'perfil', 'jugadores_seleccionados')
 
     datos = []
