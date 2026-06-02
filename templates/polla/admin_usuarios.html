@@ -2,119 +2,110 @@
 {% block title %}Gestionar Usuarios — Admin{% endblock %}
 
 {% block content %}
-<div class="page-hero px-3">
-  <h1><i class="bi bi-people-fill text-info me-2"></i>Usuarios</h1>
-  <p class="text-muted small mb-0">El acceso se crea tras confirmar el pago. Las credenciales se envían por WhatsApp.</p>
+<div class="page-header">
+  <h1 class="page-title"><i class="bi bi-people-fill me-2" style="color:var(--info);"></i>Usuarios</h1>
+  <p class="page-sub">El acceso se crea tras confirmar el pago. Las credenciales se envían por WhatsApp.</p>
 </div>
 
 <div class="px-3 py-3">
 
-  <!-- ── CUOTA PARAMETRICA ── -->
-  <div class="card mb-3" style="border-color:rgba(255,215,0,.3) !important;">
-    <div class="card-body p-3">
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <div>
-          <div class="label"><i class="bi bi-trophy-fill me-1 text-gold"></i>Costo de Inscripción — El Gran Pozo</div>
-          <div style="font-size:.75rem;color:var(--muted);">Cada participante paga esta cuota. El 85% va al pozo de premios.</div>
+  <!-- Cuota parametrica -->
+  <div style="background:var(--card);border:1px solid rgba(255,215,0,.3);border-radius:14px;padding:.875rem 1rem;margin-bottom:.75rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+      <div>
+        <div style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--gold);">
+          <i class="bi bi-trophy-fill me-1"></i>Costo de Inscripción
         </div>
-        <form method="post" class="d-flex align-items-center gap-2">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="update_cuota">
-          <div style="display:flex;align-items:center;gap:0;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;">
-            <span style="background:rgba(255,215,0,.08);border-right:1px solid var(--border);padding:.35rem .6rem;font-size:.8rem;font-weight:700;color:#F59E0B;">Bs.</span>
-            <input type="number" name="cuota" value="{{ cuota_actual }}" min="1" step="0.01"
-                   style="width:80px;background:var(--surface);border:none;outline:none;padding:.35rem .6rem;font-size:.9rem;font-weight:800;color:var(--text);">
-          </div>
-          <button type="submit" class="btn btn-gold btn-sm"><i class="bi bi-check-lg"></i></button>
-        </form>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.15rem;">Cuota por participante — 85% va al pozo</div>
       </div>
+      <form method="post" style="display:flex;align-items:center;gap:.5rem;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="update_cuota">
+        <div style="display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;">
+          <span style="background:rgba(255,215,0,.1);border-right:1px solid var(--border);padding:.35rem .6rem;font-size:.85rem;font-weight:800;color:var(--gold);">Bs.</span>
+          <input type="number" name="cuota" value="{{ cuota_actual }}" min="1" step="1"
+                 style="width:75px;background:var(--surface);border:none;outline:none;padding:.35rem .6rem;font-size:.95rem;font-weight:800;color:var(--text);">
+        </div>
+        <button type="submit" class="btn btn-gold btn-sm"><i class="bi bi-check-lg"></i></button>
+      </form>
     </div>
   </div>
 
-  <!-- WhatsApp status bar -->
-  <div class="card mb-3" style="background:var(--surface) !important;font-size:.78rem;">
-    <div class="card-body p-3">
-      <div class="d-flex align-items-center justify-content-between mb-2">
-        <span class="label"><i class="bi bi-whatsapp me-1 text-success"></i>Estado de WhatsApp</span>
-        <div class="d-flex gap-2">
-          <a href="{% url 'polla:admin_test_whatsapp' %}" class="btn btn-ghost btn-sm">
-            <i class="bi bi-wifi"></i> Verificar
-          </a>
-          <a href="{% url 'polla:admin_registrar_webhook' %}" class="btn btn-ghost btn-sm"
-             onclick="return confirm('¿Registrar webhook en Evolution API? Esto activa la recuperación de clave por WhatsApp.')">
-            <i class="bi bi-plug"></i> Registrar webhook
-          </a>
-        </div>
+  <!-- WhatsApp status -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:.875rem 1rem;margin-bottom:.75rem;font-size:.78rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:.5rem;">
+      <span style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">
+        <i class="bi bi-whatsapp me-1" style="color:#25D366;"></i>Estado WhatsApp
+      </span>
+      <div style="display:flex;gap:.35rem;">
+        <a href="{% url 'polla:admin_test_whatsapp' %}" class="btn btn-ghost btn-sm">
+          <i class="bi bi-wifi"></i> Verificar
+        </a>
+        <a href="{% url 'polla:admin_registrar_webhook' %}" class="btn btn-ghost btn-sm"
+           onclick="return confirm('¿Registrar webhook?')">
+          <i class="bi bi-plug"></i> Webhook
+        </a>
       </div>
-      <div class="d-flex flex-column gap-1">
-        <div class="d-flex justify-content-between">
-          <span class="text-muted">Servidor Evolution API</span>
-          <code style="color:var(--info);font-size:.72rem;">{{ wa_url }}</code>
-        </div>
-        <div class="d-flex justify-content-between">
-          <span class="text-muted">Instancia (número conectado)</span>
-          <code style="color:var(--info);font-size:.72rem;">{{ wa_instance }}</code>
-        </div>
-        <div class="d-flex justify-content-between">
-          <span class="text-muted">API Key</span>
-          {% if wa_key_ok %}
-          <span class="badge badge-success">Configurada ✓</span>
-          {% else %}
-          <span class="badge badge-danger">⚠ Sin configurar</span>
-          {% endif %}
-        </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:.3rem;">
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:var(--muted);">Instancia activa</span>
+        <code style="color:var(--info);font-size:.72rem;">{{ wa_instance }}</code>
       </div>
-      <div class="mt-2 p-2 rounded-3" style="background:rgba(99,102,241,.08);border:1px dashed rgba(99,102,241,.3);font-size:.72rem;">
-        <div class="fw-bold mb-1"><i class="bi bi-robot me-1"></i>Recuperación de clave automática</div>
-        Si el webhook está registrado, los participantes pueden escribir <code>clave</code> al número de WhatsApp y el sistema les enviará automáticamente una nueva contraseña.<br>
-        <span class="text-muted">El número que envía es el conectado a la instancia <strong>{{ wa_instance }}</strong>.</span>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:var(--muted);">API Key</span>
+        {% if wa_key_ok %}
+        <span style="color:var(--green);font-size:.72rem;font-weight:700;">✓ Configurada</span>
+        {% else %}
+        <span style="color:var(--red);font-size:.72rem;font-weight:700;">⚠ Sin configurar</span>
+        {% endif %}
       </div>
     </div>
   </div>
 
   <!-- Create user form -->
-  <div class="card mb-4" style="border-color:rgba(34,197,94,.3) !important;">
-    <div class="card-header d-flex align-items-center gap-2">
-      <i class="bi bi-whatsapp text-success" style="font-size:1.1rem;"></i>
-      <span class="fw-semibold">Alta de participante</span>
+  <div style="background:var(--card);border:1px solid rgba(34,197,94,.3);border-radius:14px;overflow:hidden;margin-bottom:1rem;">
+    <div style="background:rgba(34,197,94,.12);padding:.55rem 1rem;display:flex;align-items:center;gap:.5rem;border-bottom:1px solid rgba(34,197,94,.2);">
+      <i class="bi bi-whatsapp" style="color:#25D366;font-size:1rem;"></i>
+      <span style="font-weight:800;color:var(--text);font-size:.85rem;">Alta de participante</span>
     </div>
-    <div class="card-body p-3">
-      <p class="text-muted small mb-3">
-        El sistema genera la contraseña automáticamente y la envía por WhatsApp.
-        El <strong>número de teléfono</strong> será el usuario para iniciar sesión.
+    <div style="padding:.875rem 1rem;">
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:.75rem;">
+        El sistema genera la contraseña y la envía por WhatsApp.
+        El <strong style="color:var(--text);">número de teléfono</strong> será el usuario para iniciar sesión.
       </p>
       <form method="post">
         {% csrf_token %}
         <div class="row g-2">
           <div class="col-6">
-            <label class="form-label">Nombre <span class="text-danger">*</span></label>
+            <label style="display:block;font-size:.73rem;font-weight:700;color:var(--text2);margin-bottom:.25rem;">
+              Nombre <span style="color:var(--red);">*</span>
+            </label>
             <input type="text" name="first_name" class="form-control" placeholder="Juan" required autofocus>
           </div>
           <div class="col-6">
-            <label class="form-label">Apellido</label>
+            <label style="display:block;font-size:.73rem;font-weight:700;color:var(--text2);margin-bottom:.25rem;">Apellido</label>
             <input type="text" name="last_name" class="form-control" placeholder="Pérez">
           </div>
           <div class="col-12">
-            <label class="form-label">
-              WhatsApp / Teléfono <span class="text-danger">*</span>
+            <label style="display:block;font-size:.73rem;font-weight:700;color:var(--text2);margin-bottom:.25rem;">
+              WhatsApp <span style="color:var(--red);">*</span>
             </label>
-            <div class="input-group">
-              <span class="input-group-text fw-bold" style="background:rgba(255,255,255,.07);border-color:var(--border,#252840);color:#fff;letter-spacing:.5px;">
-                <i class="bi bi-whatsapp text-success me-1"></i>+591
+            <div style="display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;">
+              <span style="background:rgba(255,255,255,.06);border-right:1px solid var(--border);padding:.5rem .75rem;font-size:.88rem;font-weight:800;color:var(--text);display:flex;align-items:center;gap:.3rem;white-space:nowrap;">
+                <i class="bi bi-whatsapp" style="color:#25D366;"></i>+591
               </span>
               <input type="tel" name="telefono" class="form-control"
-                     placeholder="70512621" required
-                     maxlength="8" pattern="[0-9]{8}"
-                     title="8 dígitos sin el código de país 591"
-                     style="letter-spacing:2px;font-weight:700;font-size:1rem;">
+                     placeholder="70512621" required maxlength="8" pattern="[0-9]{8}"
+                     style="border-radius:0;border-left:none;letter-spacing:2px;font-weight:700;font-size:1rem;">
             </div>
-            <div class="form-text" style="color:var(--muted,#6b7280);font-size:.72rem;">
+            <div style="font-size:.7rem;color:var(--muted);margin-top:.25rem;">
               Solo los 8 dígitos — el servidor agrega el 591 automáticamente
             </div>
           </div>
           <div class="col-12 mt-1">
-            <button type="submit" class="btn btn-success w-100 fw-bold">
-              <i class="bi bi-whatsapp me-2"></i>Crear usuario y enviar por WhatsApp
+            <button type="submit" class="btn btn-green btn-full">
+              <i class="bi bi-whatsapp me-1"></i>Crear y enviar acceso por WhatsApp
             </button>
           </div>
         </div>
@@ -123,98 +114,91 @@
   </div>
 
   <!-- Participants list -->
-  <div class="section-title">Participantes ({{ usuarios|length }})</div>
+  <div style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:.5rem;">
+    Participantes ({{ usuarios|length }})
+  </div>
 
   {% for u in usuarios %}
-  <div class="rank-row mb-2 {% if not u.is_active %}opacity-50{% endif %}">
-    <span class="rank-avatar"
-          style="background:linear-gradient(135deg,{% cycle '#b22234' '#0057a8' '#006847' '#7c3aed' '#0891b2' %},{% cycle '#0057a8' '#006847' '#b22234' '#0891b2' '#7c3aed' %});">
+  <div class="rank-row {% if not u.is_active %}opacity-50{% endif %}">
+    <span class="rank-av"
+          style="background:linear-gradient(135deg,{% cycle '#1d4ed8' '#16a34a' '#d97706' '#7c3aed' '#0369a1' %},{% cycle '#16a34a' '#1d4ed8' '#7c3aed' '#d97706' '#16a34a' %});">
       {{ u.first_name|first|upper }}{{ u.last_name|first|upper }}
     </span>
     <div class="rank-info">
       <div class="rank-name">{{ u.get_full_name|default:u.username }}</div>
-      <div class="rank-sub">
+      <div style="font-size:.7rem;color:var(--muted);margin-top:1px;">
         {% if u.perfil.telefono %}
-        <i class="bi bi-whatsapp text-success me-1"></i>{{ u.perfil.telefono }}
+        <i class="bi bi-whatsapp" style="color:#25D366;"></i> {{ u.perfil.telefono }}
         {% else %}
         @{{ u.username }}
         {% endif %}
       </div>
-      <div class="mt-1 d-flex gap-1 flex-wrap">
+      <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.25rem;">
         {% if u.is_active %}
-        <span class="badge" style="background:rgba(34,197,94,.15);color:#4ade80;font-size:.6rem;">Activo</span>
+        <span style="background:rgba(22,163,74,.15);color:#4ade80;border-radius:999px;padding:.1rem .45rem;font-size:.6rem;font-weight:700;">Activo</span>
         {% else %}
-        <span class="badge" style="background:rgba(239,68,68,.15);color:#f87171;font-size:.6rem;">Desactivado</span>
+        <span style="background:rgba(239,68,68,.15);color:#f87171;border-radius:999px;padding:.1rem .45rem;font-size:.6rem;font-weight:700;">Desactivado</span>
         {% endif %}
-        <span class="badge" style="background:rgba(122,148,180,.1);color:var(--c-muted);font-size:.6rem;">
+        <span style="background:rgba(99,102,241,.12);color:#a5b4fc;border-radius:999px;padding:.1rem .45rem;font-size:.6rem;font-weight:700;">
           {{ u.pronosticos.count }} pronósticos
         </span>
-        <span class="badge" style="background:rgba(124,58,237,.1);color:#c084fc;font-size:.6rem;">
+        <span style="background:rgba(168,85,247,.12);color:#c084fc;border-radius:999px;padding:.1rem .45rem;font-size:.6rem;font-weight:700;">
           {{ u.jugadores_seleccionados.count }}/5 jugadores
         </span>
       </div>
     </div>
-    <div class="d-flex gap-1">
+    <div style="display:flex;gap:.3rem;flex-shrink:0;">
       <!-- Reset password dropdown -->
       <div class="dropdown">
-        <button class="btn btn-sm btn-outline-primary dropdown-toggle"
-                style="font-size:.7rem;border-radius:8px;" data-bs-toggle="dropdown"
-                title="Resetear clave">
+        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="dropdown"
+                style="font-size:.7rem;border-radius:8px;" title="Resetear clave">
           <i class="bi bi-key"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-end" style="min-width:190px;">
-          <li class="px-3 py-1" style="font-size:.72rem;font-weight:700;color:var(--muted,#6b7280);">
+          <li class="px-3 py-1" style="font-size:.72rem;font-weight:700;color:var(--muted);">
             {{ u.get_full_name|default:u.username }}
           </li>
           <li><hr class="dropdown-divider"></li>
           <li>
             <form method="post" action="{% url 'polla:admin_reset_password' u.pk %}">
-              {% csrf_token %}
-              <input type="hidden" name="tipo" value="generic">
-              <button class="dropdown-item" type="submit"
-                      onclick="return confirm('¿Resetear a Polla2026?')">
-                <i class="bi bi-arrow-counterclockwise me-2"></i>
-                Resetear a <strong>Polla2026</strong>
+              {% csrf_token %}<input type="hidden" name="tipo" value="generic">
+              <button class="dropdown-item" type="submit" onclick="return confirm('¿Resetear a Polla2026?')">
+                <i class="bi bi-arrow-counterclockwise me-2"></i>Resetear a <strong>Polla2026</strong>
               </button>
             </form>
           </li>
           <li>
             <form method="post" action="{% url 'polla:admin_reset_password' u.pk %}">
-              {% csrf_token %}
-              <input type="hidden" name="tipo" value="random">
-              <button class="dropdown-item" type="submit"
-                      onclick="return confirm('¿Generar clave aleatoria?')">
+              {% csrf_token %}<input type="hidden" name="tipo" value="random">
+              <button class="dropdown-item" type="submit" onclick="return confirm('¿Generar clave aleatoria?')">
                 <i class="bi bi-shuffle me-2"></i>Generar clave aleatoria
               </button>
             </form>
           </li>
         </ul>
       </div>
-      <!-- Toggle active -->
+      <!-- Toggle -->
       <form method="post" action="{% url 'polla:admin_toggle_usuario' u.pk %}">
         {% csrf_token %}
         <button type="submit" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}"
-                style="font-size:.7rem;border-radius:8px;"
-                title="{% if u.is_active %}Desactivar{% else %}Activar{% endif %}">
+                style="font-size:.7rem;border-radius:8px;">
           {% if u.is_active %}<i class="bi bi-person-x"></i>{% else %}<i class="bi bi-person-check"></i>{% endif %}
         </button>
       </form>
-      <!-- DELETE permanently -->
+      <!-- Delete -->
       <form method="post" action="{% url 'polla:admin_eliminar_usuario' u.pk %}">
         {% csrf_token %}
-        <button type="submit" class="btn btn-sm btn-red"
-                style="font-size:.7rem;border-radius:8px;"
-                title="Eliminar permanentemente (baja del torneo)"
-                onclick="return confirm('¿Eliminar permanentemente a {{ u.get_full_name|default:u.username }}? Se eliminarán todos sus pronósticos y no sumará al pozo.')">
+        <button type="submit" class="btn btn-red btn-sm" style="font-size:.7rem;border-radius:8px;"
+                onclick="return confirm('¿Eliminar permanentemente a {{ u.get_full_name|default:u.username }}?')">
           <i class="bi bi-trash3"></i>
         </button>
       </form>
     </div>
   </div>
   {% empty %}
-  <div class="text-center py-5 text-muted">
-    <i class="bi bi-people" style="font-size:3rem;"></i>
-    <p class="mt-2">Aún no hay participantes.<br>Crea el primero arriba.</p>
+  <div style="text-align:center;padding:2.5rem 1rem;color:var(--muted);">
+    <i class="bi bi-people" style="font-size:2.5rem;display:block;margin-bottom:.5rem;"></i>
+    Aún no hay participantes. Crea el primero arriba.
   </div>
   {% endfor %}
 
