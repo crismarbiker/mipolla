@@ -15,15 +15,15 @@ from django.contrib.auth.models import User
 from django.db import connection
 from django.utils import timezone
 from datetime import datetime
-import pytz
+import zoneinfo
 
-BOLIVIA = pytz.timezone('America/La_Paz')
+BOLIVIA = zoneinfo.ZoneInfo('America/La_Paz')
 
 
 def dt(fecha_str):
     """Parse 'DD/MM HH:MM' → aware datetime in La Paz timezone."""
     d = datetime.strptime(f"2026/{fecha_str}", "%Y/%d/%m %H:%M")
-    return BOLIVIA.localize(d)
+    return d.replace(tzinfo=BOLIVIA)
 
 
 # FIFA 2026 Official Group Stage Schedule (La Paz time, UTC-4)
@@ -175,6 +175,7 @@ class Command(BaseCommand):
 
         # 4. Load FIFA 2026 official schedule
         from polla.models import Fase
+        from django.db.models import Q
         fase_grupos = Fase.objects.get(id_fase=1)
         updated = 0
         not_found = 0
@@ -189,16 +190,9 @@ class Command(BaseCommand):
                 continue
 
             fecha = dt(fecha_str)
-            cnt = Partido.objects.filter(
-                fase=fase_grupos,
-            ).filter(
-                (
-                    __import__('django.db.models', fromlist=['Q']).Q(pais_local=local) &
-                    __import__('django.db.models', fromlist=['Q']).Q(pais_visitante=visitante)
-                ) | (
-                    __import__('django.db.models', fromlist=['Q']).Q(pais_local=visitante) &
-                    __import__('django.db.models', fromlist=['Q']).Q(pais_visitante=local)
-                )
+            cnt = Partido.objects.filter(fase=fase_grupos).filter(
+                (Q(pais_local=local) & Q(pais_visitante=visitante)) |
+                (Q(pais_local=visitante) & Q(pais_visitante=local))
             ).update(fecha=fecha)
 
             if cnt == 0:
