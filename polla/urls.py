@@ -16,5 +16,6 @@ urlpatterns = [
     path('admin/resultados/<int:pk>/fetch/', views.admin_fetch_resultado, name='admin_fetch_resultado'),
     path('admin/whatsapp/test/', views.admin_test_whatsapp, name='admin_test_whatsapp'),
     path('admin/whatsapp/registrar/', views.admin_registrar_webhook, name='admin_registrar_webhook'),
+    path('admin/eliminatorias/', views.admin_generar_eliminatorias, name='admin_generar_eliminatorias'),
     path('webhook/whatsapp/', views.webhook_whatsapp, name='webhook_whatsapp'),
 ]

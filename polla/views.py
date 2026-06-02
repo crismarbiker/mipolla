@@ -314,6 +314,23 @@ def admin_usuarios(request):
 
 @login_required
 @user_passes_test(_es_admin)
+def admin_generar_eliminatorias(request):
+    """Generate knockout round matches from group results."""
+    from django.core.management import call_command
+    from io import StringIO
+
+    fase = request.GET.get('fase', 'R32')
+    out = StringIO()
+    try:
+        call_command('generar_eliminatorias', fase=fase, stdout=out)
+        messages.success(request, f'✅ {out.getvalue()}')
+    except Exception as e:
+        messages.error(request, f'❌ Error: {e}')
+    return redirect('polla:admin_resultados')
+
+
+@login_required
+@user_passes_test(_es_admin)
 def admin_test_whatsapp(request):
     from .whatsapp import verificar_conexion
     ok, msg = verificar_conexion()
