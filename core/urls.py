@@ -8,6 +8,7 @@ urlpatterns = [
     path('django-admin/', admin.site.urls),
     path('login/', polla_views.custom_login, name='login'),
     path('logout/', polla_views.custom_logout, name='logout'),
+    path('unirse/', polla_views.landing, name='landing'),  # public landing page
     path('', include('polla.urls', namespace='polla')),
 ]
 

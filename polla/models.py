@@ -160,6 +160,10 @@ class TorneoConfig(models.Model):
                                 help_text='Cuota de inscripción por participante en Bs.')
     pozo_activo = models.BooleanField(default=True,
                                       help_text='Mostrar la página El Gran Pozo')
+    qr_pago = models.ImageField(upload_to='torneo/', null=True, blank=True,
+                                help_text='QR de pago (PNG/JPG) para la landing page')
+    whatsapp_pago = models.CharField(max_length=20, default='59170512621',
+                                     help_text='Número WhatsApp para enviar comprobante de pago')
 
     class Meta:
         verbose_name = 'Configuración del torneo'

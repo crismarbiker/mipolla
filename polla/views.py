@@ -11,6 +11,13 @@ from .models import (Partido, Pronostico, Pais, Jugador, Fase, PerfilUsuario,
 from .whatsapp import normalizar_telefono as _norm_tel
 
 
+def landing(request):
+    """Public landing page — explains the polla, shows payment QR."""
+    from .models import TorneoConfig
+    torneo = TorneoConfig.get()
+    return render(request, 'landing.html', {'torneo': torneo})
+
+
 def custom_login(request):
     """Login that accepts either 8-digit phone (auto-prepends 591) or full username."""
     if request.user.is_authenticated:
