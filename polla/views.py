@@ -22,17 +22,20 @@ def home(request):
 
 @login_required
 def pronosticos_usuario(request, username):
-    """Show all predictions for a specific user (transparency view)."""
+    """Show ALL predictions for a user — played and upcoming."""
     target = get_object_or_404(User, username=username, is_active=True)
 
-    partidos_jugados = Partido.objects.filter(jugado=True).select_related(
-        'pais_local', 'pais_visitante', 'fase'
-    ).order_by('fecha')
+    # All predictions this user made, ordered by match date
+    prons_qs = Pronostico.objects.filter(usuario=target).select_related(
+        'partido__pais_local', 'partido__pais_visitante', 'partido__fase'
+    ).order_by('partido__fecha')
 
-    prons = {
-        p.partido_id: p
-        for p in Pronostico.objects.filter(usuario=target).select_related('partido')
-    }
+    prons = {p.partido_id: p for p in prons_qs}
+
+    # Matches the user has predicted (both played and upcoming)
+    partidos = Partido.objects.filter(
+        id__in=prons.keys()
+    ).select_related('pais_local', 'pais_visitante', 'fase').order_by('fecha')
 
     try:
         perfil = target.perfil
@@ -45,17 +48,21 @@ def pronosticos_usuario(request, username):
     pts_pronosticos = target.pronosticos.filter(partido__jugado=True).aggregate(t=Sum('puntos'))['t'] or 0
     pts_campeon     = perfil.puntos_campeon if perfil else 0
     pts_jugadores   = target.jugadores_seleccionados.aggregate(t=Sum('puntos_acumulados'))['t'] or 0
+    total_prons     = prons_qs.count()
+    jugados_prons   = prons_qs.filter(partido__jugado=True).count()
 
     return render(request, 'polla/pronosticos_usuario.html', {
         'target': target,
         'perfil': perfil,
-        'partidos': partidos_jugados,
+        'partidos': partidos,
         'prons': prons,
         'seleccion': seleccion,
         'pts_pronosticos': pts_pronosticos,
         'pts_campeon': pts_campeon,
         'pts_jugadores': pts_jugadores,
         'pts_total': pts_pronosticos + pts_campeon + pts_jugadores,
+        'total_prons': total_prons,
+        'jugados_prons': jugados_prons,
     })
 
 

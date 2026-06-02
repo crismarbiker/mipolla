@@ -4,146 +4,123 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#08080f">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#111827">
   <title>{% block title %}{{ torneo.nombre }} {{ torneo.temporada }}{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/polla.css' %}">
-  {# Inject tournament color as CSS variable #}
-  <style>:root { --primary: {{ torneo.color_primario }}; --primary-dim: {{ torneo.color_primario }}26; --primary-glow: {{ torneo.color_primario }}59; }</style>
+  <style>:root{--primary:{{ torneo.color_primario }};}</style>
   {% block extra_css %}{% endblock %}
 </head>
 <body>
-
 {% if user.is_authenticated %}
-<!-- ─────────────── TOP NAVBAR ─────────────── -->
-<nav class="navbar navbar-expand-lg fixed-top px-3 px-lg-4" id="mainNav">
-  <div class="d-flex align-items-center gap-2 me-auto">
-    {# Brand / Logo #}
-    <a class="navbar-brand" href="{% url 'polla:home' %}">
-      {% if torneo.logo %}
-      <img src="{{ torneo.logo.url }}" alt="{{ torneo.nombre }}" class="brand-logo">
-      {% else %}
-      <span class="brand-emoji">⚽</span>
-      <span>{{ torneo.nombre }}<span class="text-muted fw-normal ms-1" style="font-size:.75em;">{{ torneo.temporada }}</span></span>
-      {% endif %}
-    </a>
-  </div>
 
-  {# Desktop links #}
-  <div class="d-none d-lg-flex align-items-center gap-1">
-    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'polla:home' %}">
-      <i class="bi bi-house me-1"></i>Inicio
-    </a>
-    <a class="nav-link {% if request.resolver_match.url_name == 'partidos' %}active{% endif %}" href="{% url 'polla:partidos' %}">
-      <i class="bi bi-calendar3 me-1"></i>Partidos
-    </a>
-    <a class="nav-link {% if request.resolver_match.url_name == 'pronosticos' %}active{% endif %}" href="{% url 'polla:pronosticos' %}">
-      <i class="bi bi-pencil-square me-1"></i>Pronósticos
-    </a>
-    <a class="nav-link {% if request.resolver_match.url_name == 'ranking' %}active{% endif %}" href="{% url 'polla:ranking' %}">
+<!-- TOP NAV -->
+<header class="top-nav">
+  <a class="top-nav-brand" href="{% url 'polla:ranking' %}">
+    {% if torneo.logo %}
+    <img src="{{ torneo.logo.url }}" alt="{{ torneo.nombre }}">
+    {% else %}
+    <span class="brand-fallback">⚽</span>
+    <span>{{ torneo.nombre }} <span style="color:#6b7280;font-weight:500;font-size:.8em;">{{ torneo.temporada }}</span></span>
+    {% endif %}
+  </a>
+
+  <!-- Desktop links -->
+  <nav class="top-nav-links">
+    <a href="{% url 'polla:ranking' %}" class="{% if request.resolver_match.url_name in 'home,ranking,pronosticos_usuario' %}active{% endif %}">
       <i class="bi bi-trophy me-1"></i>Ranking
     </a>
-    <a class="nav-link {% if request.resolver_match.url_name == 'reglas' %}active{% endif %}" href="{% url 'polla:reglas' %}">
+    <a href="{% url 'polla:partidos' %}" class="{% if request.resolver_match.url_name == 'partidos' %}active{% endif %}">
+      <i class="bi bi-calendar3 me-1"></i>Partidos
+    </a>
+    <a href="{% url 'polla:pronosticos' %}" class="{% if request.resolver_match.url_name == 'pronosticos' %}active{% endif %}">
+      <i class="bi bi-pencil-square me-1"></i>Pronósticos
+    </a>
+    <a href="{% url 'polla:reglas' %}" class="{% if request.resolver_match.url_name == 'reglas' %}active{% endif %}">
       <i class="bi bi-book me-1"></i>Reglas
     </a>
     {% if user.is_staff %}
-    <div class="dropdown ms-1">
-      <button class="btn btn-outline btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+    <div class="dropdown">
+      <a class="dropdown-toggle" data-bs-toggle="dropdown" href="#"
+         style="color:#f59e0b;font-size:.82rem;font-weight:700;padding:.35rem .7rem;border-radius:6px;">
         <i class="bi bi-shield-lock me-1"></i>Admin
-      </button>
+      </a>
       <ul class="dropdown-menu dropdown-menu-end">
-        <li><a class="dropdown-item" href="{% url 'polla:admin_resultados' %}"><i class="bi bi-flag-fill me-2 text-success"></i>Resultados</a></li>
-        <li><a class="dropdown-item" href="{% url 'polla:admin_usuarios' %}"><i class="bi bi-people me-2 text-info"></i>Usuarios</a></li>
+        <li><a class="dropdown-item" href="{% url 'polla:admin_resultados' %}"><i class="bi bi-flag me-2 text-success"></i>Resultados</a></li>
+        <li><a class="dropdown-item" href="{% url 'polla:admin_usuarios' %}"><i class="bi bi-people me-2 text-primary"></i>Usuarios</a></li>
         <li><hr class="dropdown-divider"></li>
         <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="bi bi-gear me-2"></i>Django Admin</a></li>
       </ul>
     </div>
     {% endif %}
-    <div class="dropdown ms-2">
-      <button class="btn btn-ghost btn-sm dropdown-toggle d-flex align-items-center gap-2 p-1" data-bs-toggle="dropdown">
-        <span class="avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end" style="min-width:200px;">
-        <li class="px-3 py-2">
-          <div class="fw-bold" style="font-size:.85rem;">{{ user.get_full_name|default:user.username }}</div>
-          <div class="text-muted" style="font-size:.72rem;">@{{ user.username }}</div>
-        </li>
-        <li><hr class="dropdown-divider"></li>
-        <li>
-          <form method="post" action="{% url 'logout' %}">{% csrf_token %}
-            <button class="dropdown-item text-danger" type="submit"><i class="bi bi-box-arrow-right me-2"></i>Salir</button>
-          </form>
-        </li>
-      </ul>
-    </div>
-  </div>
+  </nav>
 
-  {# Mobile: avatar + admin icon #}
-  <div class="d-flex d-lg-none align-items-center gap-2">
+  <!-- Right: user avatar -->
+  <div class="top-nav-right">
     {% if user.is_staff %}
-    <div class="dropdown">
-      <button class="btn btn-ghost btn-icon" data-bs-toggle="dropdown">
-        <i class="bi bi-shield-lock" style="color:var(--gold);font-size:1.1rem;"></i>
+    <div class="dropdown d-lg-none">
+      <button class="nav-icon-btn" data-bs-toggle="dropdown">
+        <i class="bi bi-shield-lock" style="color:#f59e0b;"></i>
       </button>
       <ul class="dropdown-menu dropdown-menu-end">
-        <li><a class="dropdown-item" href="{% url 'polla:admin_resultados' %}"><i class="bi bi-flag-fill me-2 text-success"></i>Resultados</a></li>
-        <li><a class="dropdown-item" href="{% url 'polla:admin_usuarios' %}"><i class="bi bi-people me-2 text-info"></i>Usuarios</a></li>
+        <li><a class="dropdown-item" href="{% url 'polla:admin_resultados' %}"><i class="bi bi-flag me-2 text-success"></i>Resultados</a></li>
+        <li><a class="dropdown-item" href="{% url 'polla:admin_usuarios' %}"><i class="bi bi-people me-2 text-primary"></i>Usuarios</a></li>
         <li><hr class="dropdown-divider"></li>
         <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="bi bi-gear me-2"></i>Django Admin</a></li>
       </ul>
     </div>
     {% endif %}
     <div class="dropdown">
-      <button class="btn btn-ghost btn-icon p-1" data-bs-toggle="dropdown">
-        <span class="avatar">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
+      <button class="nav-icon-btn" data-bs-toggle="dropdown">
+        <span class="avatar-txt">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</span>
       </button>
-      <ul class="dropdown-menu dropdown-menu-end" style="min-width:190px;">
+      <ul class="dropdown-menu dropdown-menu-end" style="min-width:185px;">
         <li class="px-3 py-2">
-          <div class="fw-bold" style="font-size:.85rem;">{{ user.get_full_name|default:user.username }}</div>
-          <div class="text-muted" style="font-size:.72rem;">@{{ user.username }}</div>
+          <div style="font-weight:700;font-size:.85rem;color:#111827;">{{ user.get_full_name|default:user.username }}</div>
+          <div style="font-size:.72rem;color:#9ca3af;">@{{ user.username }}</div>
         </li>
         <li><hr class="dropdown-divider"></li>
         <li>
           <form method="post" action="{% url 'logout' %}">{% csrf_token %}
-            <button class="dropdown-item text-danger" type="submit"><i class="bi bi-box-arrow-right me-2"></i>Salir</button>
+            <button class="dropdown-item text-danger" type="submit">
+              <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+            </button>
           </form>
         </li>
       </ul>
     </div>
   </div>
+</header>
+
+<!-- BOTTOM NAV (mobile) -->
+<nav class="bot-nav">
+  <a href="{% url 'polla:ranking' %}" class="{% if request.resolver_match.url_name in 'home,ranking,pronosticos_usuario' %}active{% endif %}">
+    <i class="bi bi-trophy{% if request.resolver_match.url_name in 'home,ranking' %}-fill{% endif %}"></i>Ranking
+  </a>
+  <a href="{% url 'polla:partidos' %}" class="{% if request.resolver_match.url_name == 'partidos' %}active{% endif %}">
+    <i class="bi bi-calendar3"></i>Partidos
+  </a>
+  <a href="{% url 'polla:pronosticos' %}" class="{% if request.resolver_match.url_name == 'pronosticos' %}active{% endif %}">
+    <i class="bi bi-pencil{% if request.resolver_match.url_name == 'pronosticos' %}-fill{% endif %}-square"></i>Pron.
+  </a>
+  <a href="{% url 'polla:reglas' %}" class="{% if request.resolver_match.url_name == 'reglas' %}active{% endif %}">
+    <i class="bi bi-book{% if request.resolver_match.url_name == 'reglas' %}-fill{% endif %}"></i>Reglas
+  </a>
 </nav>
 
-<!-- ──────── BOTTOM MOBILE NAV ──────── -->
-<nav class="bot-nav">
-  <div class="bot-nav-items">
-    <a href="{% url 'polla:home' %}" class="bot-nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-      <i class="bi bi-house{% if request.resolver_match.url_name == 'home' %}-fill{% endif %}"></i>Inicio
-    </a>
-    <a href="{% url 'polla:partidos' %}" class="bot-nav-item {% if request.resolver_match.url_name == 'partidos' %}active{% endif %}">
-      <i class="bi bi-calendar3"></i>Partidos
-    </a>
-    <a href="{% url 'polla:pronosticos' %}" class="bot-nav-item {% if request.resolver_match.url_name == 'pronosticos' %}active{% endif %}">
-      <i class="bi bi-pencil{% if request.resolver_match.url_name == 'pronosticos' %}-fill{% endif %}-square"></i>Pron.
-    </a>
-    <a href="{% url 'polla:ranking' %}" class="bot-nav-item {% if request.resolver_match.url_name == 'ranking' %}active{% endif %}">
-      <i class="bi bi-trophy{% if request.resolver_match.url_name == 'ranking' %}-fill{% endif %}"></i>Ranking
-    </a>
-  </div>
-</nav>
 {% endif %}
 
-<!-- ──────── MAIN ──────── -->
-<main class="{% if user.is_authenticated %}mt-nav{% endif %}">
+<!-- MAIN -->
+<main class="page-wrap">
   {% if messages %}
   <div class="px-3 pt-2">
     {% for msg in messages %}
-    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+    <div class="alert alert-{{ msg.tags }} alert-dismissible fade show py-2" role="alert">
       {{ msg|safe }}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" style="filter:invert(.6);"></button>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
     {% endfor %}
   </div>
@@ -151,7 +128,7 @@
   {% block content %}{% endblock %}
 </main>
 
-<footer class="site-footer mt-4 py-3 text-center">
+<footer class="site-footer">
   ⚽ {{ torneo.nombre }} {{ torneo.temporada }}
 </footer>
 
