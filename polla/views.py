@@ -91,8 +91,8 @@ def reglas(request):
 
 
 def forgot_password(request):
-    """Public page: enter phone number → receive new password via WhatsApp."""
-    sent = False
+    """Public page: enter phone number → new password shown on screen + sent via WhatsApp."""
+    nueva_clave = None
     error = None
 
     if request.method == 'POST':
@@ -114,14 +114,14 @@ def forgot_password(request):
                     nueva = generar_password()
                     user.set_password(nueva)
                     user.save()
+                    # Try WhatsApp (may fail — password shown on screen as backup)
                     _enviar_solo_clave(telefono, nueva)
-                    sent = True
+                    nueva_clave = nueva  # Always show on screen
             except PerfilUsuario.DoesNotExist:
-                # Don't reveal if number exists or not (security)
-                sent = True  # show success anyway to avoid user enumeration
+                error = 'Número no encontrado. Verifica que sea el mismo que usaste al registrarte.'
 
     return render(request, 'registration/forgot_password.html', {
-        'sent': sent,
+        'nueva_clave': nueva_clave,
         'error': error,
     })
 
