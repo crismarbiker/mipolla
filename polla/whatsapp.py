@@ -89,13 +89,15 @@ def registrar_webhook(webhook_url: str) -> tuple[bool, str]:
         return False, 'EVOLUTION_API_KEY no configurada.'
 
     try:
-        resp = requests.put(
+        # Evolution API v2.2.3 format: body wrapped in "webhook" key
+        resp = requests.post(
             f"{api_url}/webhook/set/{instance}",
             json={
-                "url": webhook_url,
-                "webhook_by_events": False,
-                "webhook_base64": False,
-                "events": ["MESSAGES_UPSERT"],
+                "webhook": {
+                    "url": webhook_url,
+                    "events": ["MESSAGES_UPSERT"],
+                    "enabled": True,
+                }
             },
             headers={"apikey": api_key},
             timeout=8,

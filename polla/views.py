@@ -287,44 +287,40 @@ import json
 @csrf_exempt
 def webhook_whatsapp(request):
     """
-    Evolution API sends incoming WhatsApp messages here.
-    If the message text is exactly "clave", we generate a new password
-    and send it back to the user.
+    Router webhook: receives all messages from Evolution API.
+    - "clave" → generates new password, sends it via WA, does NOT forward.
+    - Everything else → forwarded to the original ElCarguero backend webhook.
     """
+    import threading
+    from django.conf import settings as djsettings
+
     if request.method != 'POST':
         return JsonResponse({'ok': True})
 
-    # Verify API key header (Evolution API sends apikey header)
-    from django.conf import settings as djsettings
+    # Verify API key (Evolution sends it as header)
     api_key = getattr(djsettings, 'EVOLUTION_API_KEY', '')
     if api_key:
-        req_key = request.headers.get('apikey', '')
-        if req_key != api_key:
+        if request.headers.get('apikey', '') != api_key:
             return JsonResponse({'error': 'unauthorized'}, status=401)
 
+    raw_body = request.body
     try:
-        body = json.loads(request.body)
-    except (json.JSONDecodeError, Exception):
-        return JsonResponse({'ok': False, 'error': 'invalid json'})
+        body = json.loads(raw_body)
+    except Exception:
+        return _forward_to_elcarguero(raw_body)
 
-    # Only handle incoming message events
     event = body.get('event', '')
+    data  = body.get('data', {})
+    key   = data.get('key', {})
+
+    # Forward non-message events immediately to ElCarguero
     if event not in ('messages.upsert', 'MESSAGES_UPSERT'):
-        return JsonResponse({'ok': True, 'ignored': event})
+        return _forward_to_elcarguero(raw_body)
 
-    data = body.get('data', {})
-    key  = data.get('key', {})
+    # Skip own messages and groups — forward to ElCarguero
+    if key.get('fromMe') or '@g.us' in key.get('remoteJid', ''):
+        return _forward_to_elcarguero(raw_body)
 
-    # Skip messages I sent myself
-    if key.get('fromMe'):
-        return JsonResponse({'ok': True})
-
-    # Skip group messages
-    remote_jid = key.get('remoteJid', '')
-    if '@g.us' in remote_jid:
-        return JsonResponse({'ok': True})
-
-    # Extract text (handles plain text and extended text messages)
     msg_obj = data.get('message', {})
     texto = (
         msg_obj.get('conversation') or
@@ -332,31 +328,39 @@ def webhook_whatsapp(request):
         ''
     ).strip().lower()
 
-    # Only react to "clave"
-    if texto != 'clave':
-        return JsonResponse({'ok': True, 'ignored': 'not keyword'})
+    # ── Keyword "clave" → handle locally, don't forward ──
+    if texto == 'clave':
+        from .whatsapp import normalizar_telefono, generar_password, enviar_credenciales_whatsapp
+        telefono = normalizar_telefono(key.get('remoteJid', '').split('@')[0])
+        try:
+            user = User.objects.get(username=telefono, is_active=True)
+            nueva_clave = generar_password()
+            user.set_password(nueva_clave)
+            user.save()
+            nombre = user.get_full_name() or user.first_name or telefono
+            enviar_credenciales_whatsapp(telefono, nombre, telefono, nueva_clave)
+        except User.DoesNotExist:
+            pass  # unknown number — silently ignore
+        return JsonResponse({'ok': True})
 
-    # Extract phone number (strip @s.whatsapp.net and any non-digits)
-    from .whatsapp import normalizar_telefono, generar_password, enviar_credenciales_whatsapp
-    telefono = normalizar_telefono(remote_jid.split('@')[0])
+    # ── Everything else → forward to ElCarguero backend ──
+    return _forward_to_elcarguero(raw_body)
 
-    # Find user by phone number (stored as username)
-    try:
-        user = User.objects.get(username=telefono, is_active=True)
-    except User.DoesNotExist:
-        # Don't respond to unknown numbers — avoids leaking info
-        return JsonResponse({'ok': True, 'ignored': 'user not found'})
 
-    # Generate and set new password
-    nueva_clave = generar_password()
-    user.set_password(nueva_clave)
-    user.save()
+def _forward_to_elcarguero(raw_body: bytes):
+    """Proxy the payload to the original ElCarguero webhook (non-blocking)."""
+    import threading, requests as req
+    ELCARGUERO_WH = 'http://elcarguero_backend:4000/api/webhook/whatsapp'
 
-    # Send new credentials via WhatsApp
-    nombre = user.get_full_name() or user.first_name or user.username
-    enviar_credenciales_whatsapp(telefono, nombre, telefono, nueva_clave)
+    def _send():
+        try:
+            req.post(ELCARGUERO_WH, data=raw_body,
+                     headers={'Content-Type': 'application/json'}, timeout=8)
+        except Exception:
+            pass
 
-    return JsonResponse({'ok': True})
+    threading.Thread(target=_send, daemon=True).start()
+    return JsonResponse({'ok': True, 'forwarded': True})
 
 
 @login_required
