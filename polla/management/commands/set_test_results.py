@@ -39,12 +39,15 @@ class Command(BaseCommand):
             return
 
         # Ensure every user has player selections
+        # Use bulk_create to bypass the tournament-lock check in save()
         all_players = list(Jugador.objects.all())
         for user in users:
             if not user.jugadores_seleccionados.exists():
                 selected = random.sample(all_players, min(5, len(all_players)))
-                for j in selected:
-                    SeleccionJugador.objects.get_or_create(usuario=user, jugador=j)
+                SeleccionJugador.objects.bulk_create(
+                    [SeleccionJugador(usuario=user, jugador=j) for j in selected],
+                    ignore_conflicts=True
+                )
                 self.stdout.write(f'  → {user.get_full_name()}: {len(selected)} jugadores asignados')
 
         # Ensure every user has a champion prediction
