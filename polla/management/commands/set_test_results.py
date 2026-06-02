@@ -86,38 +86,40 @@ class Command(BaseCommand):
             for gol in partido.goles.all():
                 gol.recalcular_bonus_jugador()
 
-            # Create random prediction for each user
+            # Create random predictions using direct SQL (bypasses tournament lock)
+            from django.db import connection
             for user in users:
-                # 40% chance of exact, 40% correct winner, 20% wrong
                 roll = random.random()
                 if roll < 0.35:
-                    # Exact
                     gl, gv = g_local, g_visit
                 elif roll < 0.70:
-                    # Correct winner but wrong score
                     if g_local > g_visit:
-                        gl = random.randint(1, 3)
-                        gv = random.randint(0, gl - 1)
+                        gl = random.randint(1, 3); gv = random.randint(0, gl - 1)
                     elif g_local < g_visit:
-                        gv = random.randint(1, 3)
-                        gl = random.randint(0, gv - 1)
+                        gv = random.randint(1, 3); gl = random.randint(0, gv - 1)
                     else:
                         gl = gv = random.randint(0, 2)
                 else:
-                    # Wrong
                     if g_local >= g_visit:
-                        gl = random.randint(0, 1)
-                        gv = random.randint(gl + 1, gl + 2)
+                        gl = random.randint(0, 1); gv = random.randint(gl + 1, gl + 2)
                     else:
-                        gv = random.randint(0, 1)
-                        gl = random.randint(gv + 1, gv + 2)
+                        gv = random.randint(0, 1); gl = random.randint(gv + 1, gv + 2)
 
-                pron, _ = Pronostico.objects.update_or_create(
-                    usuario=user, partido=partido,
-                    defaults={'goles_local': gl, 'goles_visitante': gv, 'predice_penales': False}
-                )
-                pron.puntos = pron.calcular_puntos()
-                pron.save()
+                # Use get_or_create bypassing model save()
+                existing = Pronostico.objects.filter(usuario=user, partido=partido).first()
+                if existing:
+                    existing.goles_local = gl
+                    existing.goles_visitante = gv
+                    # Use parent save to bypass lock (match is already played)
+                    from django.db.models import Model as DjModel
+                    DjModel.save(existing, update_fields=['goles_local', 'goles_visitante', 'puntos'])
+                    pron = existing
+                else:
+                    pron = Pronostico(usuario=user, partido=partido, goles_local=gl, goles_visitante=gv)
+                    from django.db.models import Model as DjModel
+                    DjModel.save(pron, force_insert=True)
+                pts = pron.calcular_puntos()
+                Pronostico.objects.filter(pk=pron.pk).update(puntos=pts)
 
             processed += 1
 
