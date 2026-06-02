@@ -12,6 +12,11 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 FORCE_SCRIPT_NAME = '/MiPolla'
 
+# Static/media URLs must include the subpath prefix so {% static %} generates correct URLs
+# Without this, /static/css/polla.css → 404 (hits elcarguero frontend, not MiPolla)
+STATIC_URL = '/MiPolla/static/'
+MEDIA_URL  = '/MiPolla/media/'
+
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
