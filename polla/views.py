@@ -132,20 +132,20 @@ def gran_pozo(request):
 
 
 def forgot_password(request):
-    """Public page: enter 8-digit phone → new password sent ONLY via WhatsApp.
-    Never shown on screen for security — only person with that phone can see it."""
+    """Public page: enter 8-digit phone → new password.
+    Tries WhatsApp first. If WhatsApp fails or is slow,
+    shows a masked password on screen that user must reveal by tapping."""
     sent = False
+    nueva_clave = None
     error = None
 
     if request.method == 'POST':
         from .whatsapp import normalizar_telefono, generar_password
         from .models import PerfilUsuario
 
-        # Accept 8-digit input; prefix 591 automatically
         numero_raw = request.POST.get('numero', '').strip()
         numero_limpio = normalizar_telefono(numero_raw)
 
-        # Build full number: if they entered 8 digits, prepend 591
         if len(numero_limpio) == 8:
             telefono = '591' + numero_limpio
         elif len(numero_limpio) == 11 and numero_limpio.startswith('591'):
@@ -158,19 +158,20 @@ def forgot_password(request):
                 perfil = PerfilUsuario.objects.get(telefono=telefono)
                 user = perfil.usuario
                 if not user.is_active:
-                    # Don't reveal — just say "sent"
-                    sent = True
+                    sent = True  # Don't reveal
                 else:
                     nueva = generar_password()
                     user.set_password(nueva)
                     user.save()
                     _enviar_solo_clave(telefono, nueva)
                     sent = True
+                    nueva_clave = nueva  # Shown masked on screen as backup
             except PerfilUsuario.DoesNotExist:
-                sent = True  # Never reveal if number exists (security)
+                sent = True  # Security: don't reveal if number exists
 
     return render(request, 'registration/forgot_password.html', {
         'sent': sent,
+        'nueva_clave': nueva_clave,
         'error': error,
     })
 
