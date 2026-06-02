@@ -152,6 +152,41 @@ def gran_pozo(request):
     # Get current ranking to show who would win
     ranking = _calcular_ranking()
 
+    # ── Tie-splitting logic ──────────────────────────────────────────────────
+    # Group positions by tied points
+    grupos = []
+    i = 0
+    while i < len(ranking) and len(grupos) < 3:
+        pts = ranking[i]['puntos']
+        tied = [ranking[j] for j in range(i, len(ranking)) if ranking[j]['puntos'] == pts]
+        grupos.append(tied)
+        i += len(tied)
+
+    # Build prize distribution considering ties
+    # Available prize pools for positions 1,2,3
+    pools = [premio_1, premio_2, premio_3]
+    posiciones = []  # list of {usuarios, premio_cada_uno, posicion_display}
+
+    pool_idx = 0
+    for pos_idx, grupo in enumerate(grupos):
+        n = len(grupo)
+        # Collect pools consumed by this tied group
+        pools_consumed = pools[pool_idx:pool_idx + n]
+        if not pools_consumed:
+            break
+        total_pool = sum(pools_consumed)
+        por_persona = total_pool / n
+        medal = ['🥇', '🥈', '🥉'][pos_idx] if pos_idx < 3 else ''
+        posiciones.append({
+            'usuarios': grupo,
+            'por_persona': por_persona,
+            'total_pool': total_pool,
+            'n': n,
+            'medal': medal,
+            'pos_idx': pos_idx,
+        })
+        pool_idx += n
+
     return render(request, 'polla/gran_pozo.html', {
         'cuota': cuota,
         'cuota_neta': cuota_neta,
@@ -161,8 +196,8 @@ def gran_pozo(request):
         'premio_2': premio_2,
         'premio_3': premio_3,
         'descuento_pct': int(DESCUENTO * 100),
-        'ranking': ranking[:3],   # top 3
-        'all_ranking': ranking,
+        'ranking': ranking[:3],
+        'posiciones': posiciones,   # enriched with tie info
     })
 
 

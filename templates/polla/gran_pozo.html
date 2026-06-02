@@ -87,46 +87,51 @@
 
   </div>
 
-  <!-- Distribution table (clean, no calculation details) -->
+  <!-- Distribution table with tie-split logic -->
   <div class="section-bar mb-0">Distribución de Premios</div>
   <div class="rank-table-wrap">
     <table class="rank-table">
       <thead>
         <tr>
           <th>Posición</th>
-          <th class="center">%</th>
           <th class="center">Premio</th>
-          <th>Líder actual</th>
+          <th>Participante(s)</th>
         </tr>
       </thead>
       <tbody>
+        {% for pos in posiciones %}
         <tr>
-          <td><span style="font-size:1.1rem;">🥇</span> <strong style="color:#FFD700;">Primer Lugar</strong></td>
-          <td class="center" style="font-weight:800;color:#FFD700;">50%</td>
-          <td class="pts" style="color:#FFD700;">Bs. {{ premio_1|floatformat:0 }}</td>
-          <td style="font-size:.82rem;">
-            {% if ranking %}{{ ranking.0.usuario.get_full_name|default:ranking.0.usuario.username }}
-            <span style="color:var(--muted);font-size:.72rem;"> — {{ ranking.0.puntos }} pts</span>{% else %}—{% endif %}
+          <td>
+            <span style="font-size:1.1rem;">{{ pos.medal }}</span>
+            {% if pos.n > 1 %}
+            <span class="badge b-gold ms-1" style="font-size:.62rem;">{{ pos.n }} empatados</span>
+            {% endif %}
+          </td>
+          <td class="center">
+            <div class="pts" style="{% if pos.pos_idx == 0 %}color:#FFD700{% elif pos.pos_idx == 1 %}color:#c0c0c0{% else %}color:#cd7f32{% endif %};">
+              Bs. {{ pos.por_persona|floatformat:0 }}
+            </div>
+            {% if pos.n > 1 %}
+            <div style="font-size:.6rem;color:var(--muted);">c/u · Bs. {{ pos.total_pool|floatformat:0 }} ÷ {{ pos.n }}</div>
+            {% endif %}
+          </td>
+          <td>
+            {% for d in pos.usuarios %}
+            <div style="font-size:.82rem;">
+              {{ d.usuario.get_full_name|default:d.usuario.username }}
+              <span style="font-size:.7rem;color:var(--muted);">— {{ d.puntos }} pts</span>
+            </div>
+            {% endfor %}
           </td>
         </tr>
+        {% endfor %}
+        {% if not posiciones %}
         <tr>
-          <td><span style="font-size:1.1rem;">🥈</span> <strong style="color:#c0c0c0;">Segundo Lugar</strong></td>
-          <td class="center" style="font-weight:800;color:#c0c0c0;">35%</td>
-          <td class="pts" style="color:#c0c0c0;">Bs. {{ premio_2|floatformat:0 }}</td>
-          <td style="font-size:.82rem;">
-            {% if ranking|length >= 2 %}{{ ranking.1.usuario.get_full_name|default:ranking.1.usuario.username }}
-            <span style="color:var(--muted);font-size:.72rem;"> — {{ ranking.1.puntos }} pts</span>{% else %}—{% endif %}
+          <td colspan="3" class="text-center" style="color:var(--muted);padding:1rem;">
+            Aún no hay puntuaciones registradas
           </td>
         </tr>
-        <tr>
-          <td><span style="font-size:1.1rem;">🥉</span> <strong style="color:#cd7f32;">Tercer Lugar</strong></td>
-          <td class="center" style="font-weight:800;color:#cd7f32;">15%</td>
-          <td class="pts" style="color:#cd7f32;">Bs. {{ premio_3|floatformat:0 }}</td>
-          <td style="font-size:.82rem;">
-            {% if ranking|length >= 3 %}{{ ranking.2.usuario.get_full_name|default:ranking.2.usuario.username }}
-            <span style="color:var(--muted);font-size:.72rem;"> — {{ ranking.2.puntos }} pts</span>{% else %}—{% endif %}
-          </td>
-        </tr>
+        {% endif %}
       </tbody>
     </table>
   </div>
