@@ -326,6 +326,26 @@
     </div>
   </div>
 
+  {% if jugadores_bloqueados %}
+  <!-- LOCKED: same lock as player selection (first match started) -->
+  <div class="card mb-3" style="background:rgba(239,68,68,.06) !important;border-color:rgba(239,68,68,.3) !important;">
+    <div class="card-body p-3 d-flex align-items-start gap-3">
+      <span style="font-size:1.8rem;">🔒</span>
+      <div>
+        <div class="fw-bold text-danger">Selección cerrada</div>
+        <div class="text-muted small mt-1">El torneo ya inició. Tu pronóstico de campeón está fijo.</div>
+      </div>
+      {% if perfil.campeon %}
+      <div class="ms-auto text-center">
+        <div style="font-size:1.8rem;">{{ perfil.campeon.emoji }}</div>
+        <div style="font-size:.7rem;font-weight:700;">{{ perfil.campeon.nombre }}</div>
+      </div>
+      {% else %}
+      <span class="ms-auto text-muted small">Sin selección</span>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
   <form method="post">
     {% csrf_token %}
     <input type="hidden" name="action" value="campeon">
@@ -334,6 +354,12 @@
       <i class="bi bi-trophy me-2"></i>Guardar campeón
     </button>
   </form>
+  {% if primer_partido %}
+  <div class="mt-2 text-center" style="font-size:.7rem;color:var(--muted);">
+    <i class="bi bi-clock me-1"></i>Se cierra el {{ primer_partido|date:"d M · H:i" }}
+  </div>
+  {% endif %}
+  {% endif %}
 </div>
 
 {% endblock %}

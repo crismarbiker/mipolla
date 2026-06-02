@@ -9,6 +9,28 @@
 
 <div class="px-3 py-3">
 
+  <!-- ── CUOTA PARAMETRICA ── -->
+  <div class="card mb-3" style="border-color:rgba(255,215,0,.3) !important;">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+          <div class="label"><i class="bi bi-trophy-fill me-1 text-gold"></i>Costo de Inscripción — El Gran Pozo</div>
+          <div style="font-size:.75rem;color:var(--muted);">Cada participante paga esta cuota. El 85% va al pozo de premios.</div>
+        </div>
+        <form method="post" class="d-flex align-items-center gap-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update_cuota">
+          <div style="display:flex;align-items:center;gap:0;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;">
+            <span style="background:rgba(255,215,0,.08);border-right:1px solid var(--border);padding:.35rem .6rem;font-size:.8rem;font-weight:700;color:#F59E0B;">Bs.</span>
+            <input type="number" name="cuota" value="{{ cuota_actual }}" min="1" step="0.01"
+                   style="width:80px;background:var(--surface);border:none;outline:none;padding:.35rem .6rem;font-size:.9rem;font-weight:800;color:var(--text);">
+          </div>
+          <button type="submit" class="btn btn-gold btn-sm"><i class="bi bi-check-lg"></i></button>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <!-- WhatsApp status bar -->
   <div class="card mb-3" style="background:var(--surface) !important;font-size:.78rem;">
     <div class="card-body p-3">
@@ -172,8 +194,19 @@
       <form method="post" action="{% url 'polla:admin_toggle_usuario' u.pk %}">
         {% csrf_token %}
         <button type="submit" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}"
-                style="font-size:.7rem;border-radius:8px;">
+                style="font-size:.7rem;border-radius:8px;"
+                title="{% if u.is_active %}Desactivar{% else %}Activar{% endif %}">
           {% if u.is_active %}<i class="bi bi-person-x"></i>{% else %}<i class="bi bi-person-check"></i>{% endif %}
+        </button>
+      </form>
+      <!-- DELETE permanently -->
+      <form method="post" action="{% url 'polla:admin_eliminar_usuario' u.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-sm btn-red"
+                style="font-size:.7rem;border-radius:8px;"
+                title="Eliminar permanentemente (baja del torneo)"
+                onclick="return confirm('¿Eliminar permanentemente a {{ u.get_full_name|default:u.username }}? Se eliminarán todos sus pronósticos y no sumará al pozo.')">
+          <i class="bi bi-trash3"></i>
         </button>
       </form>
     </div>

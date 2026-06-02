@@ -245,11 +245,14 @@ def pronosticos(request):
             return redirect('polla:pronosticos')
 
         if action == 'campeon':
-            # Save champion prediction
+            # Champion locks when first match starts (same as player selection)
+            if torneo_iniciado():
+                messages.error(request, '🔒 El pronóstico de campeón está cerrado — el torneo ya inició.')
+                return redirect('polla:pronosticos')
             perfil_form = PerfilForm(request.POST, instance=perfil)
             if perfil_form.is_valid():
                 perfil_form.save()
-                messages.success(request, 'Pronóstico de campeón guardado.')
+                messages.success(request, '🏆 Campeón guardado.')
             return redirect('polla:pronosticos')
 
             # Default: save match predictions
@@ -370,7 +373,23 @@ def ranking(request):
 @user_passes_test(_es_admin)
 def admin_usuarios(request):
     from .whatsapp import generar_password, normalizar_telefono, enviar_credenciales_whatsapp
-    from .models import PerfilUsuario
+    from .models import PerfilUsuario, TorneoConfig
+    from decimal import Decimal, InvalidOperation
+
+    # Handle cuota update
+    if request.method == 'POST' and request.POST.get('action') == 'update_cuota':
+        nueva_cuota = request.POST.get('cuota', '').strip().replace(',', '.')
+        try:
+            val = Decimal(nueva_cuota)
+            if val <= 0:
+                raise ValueError
+            torneo = TorneoConfig.get()
+            torneo.cuota = val
+            torneo.save()
+            messages.success(request, f'Cuota actualizada a Bs. {val}')
+        except (InvalidOperation, ValueError):
+            messages.error(request, 'Cuota inválida. Ingresa un número positivo.')
+        return redirect('polla:admin_usuarios')
 
     if request.method == 'POST':
         first_name = request.POST.get('first_name', '').strip()
@@ -425,8 +444,10 @@ def admin_usuarios(request):
 
     from django.conf import settings as djsettings
     usuarios = User.objects.filter(is_staff=False).select_related('perfil').order_by('last_name', 'first_name')
+    torneo_cfg = TorneoConfig.get()
     return render(request, 'polla/admin_usuarios.html', {
         'usuarios': usuarios,
+        'cuota_actual': torneo_cfg.cuota,
         'wa_url':      getattr(djsettings, 'EVOLUTION_API_URL',  'http://elcarguero_evolution:8080'),
         'wa_instance': getattr(djsettings, 'EVOLUTION_INSTANCE', 'elcarguero'),
         'wa_key_ok':   bool(getattr(djsettings, 'EVOLUTION_API_KEY', '')),
@@ -586,6 +607,19 @@ def admin_reset_password(request, pk):
         f'background:rgba(29,78,216,.15);padding:.15rem .6rem;border-radius:6px;">{nueva}</code> '
         f'— {wa_status}'
     )
+    return redirect('polla:admin_usuarios')
+
+
+@login_required
+@user_passes_test(_es_admin)
+def admin_eliminar_usuario(request, pk):
+    """Permanently delete a user — removes them from ranking and pool."""
+    if request.method != 'POST':
+        return redirect('polla:admin_usuarios')
+    user = get_object_or_404(User, pk=pk, is_staff=False)
+    nombre = user.get_full_name() or user.username
+    user.delete()
+    messages.success(request, f'Usuario "{nombre}" eliminado permanentemente.')
     return redirect('polla:admin_usuarios')
 
 

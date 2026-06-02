@@ -96,7 +96,8 @@
 
   </div>
 
-  <!-- ── CALCULATION BREAKDOWN ── -->
+  <!-- ── CALCULATION BREAKDOWN (admin only) ── -->
+  {% if user.is_staff %}
   <div class="card card-p mb-4">
     <div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:.75rem;">
       💡 ¿Cómo se calcula?
@@ -125,6 +126,8 @@
       </div>
     </div>
   </div>
+
+  {% endif %}{# end admin-only calculation #}
 
   <!-- ── PRIZE BREAKDOWN TABLE ── -->
   <div class="section-bar mb-0">Distribución de Premios</div>
