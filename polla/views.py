@@ -1,12 +1,47 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from .models import (Partido, Pronostico, Pais, Jugador, Fase, PerfilUsuario,
                      GolPartido, SeleccionJugador, MAX_JUGADORES_SELECCION,
                      torneo_iniciado, primer_partido_fecha)
+from .whatsapp import normalizar_telefono as _norm_tel
+
+
+def custom_login(request):
+    """Login that accepts either 8-digit phone (auto-prepends 591) or full username."""
+    if request.user.is_authenticated:
+        return redirect('polla:ranking')
+
+    error = None
+    if request.method == 'POST':
+        username_raw = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+
+        # Auto-prepend 591 if 8-digit number
+        limpio = _norm_tel(username_raw)
+        if len(limpio) == 8:
+            username = '591' + limpio
+        else:
+            username = username_raw
+
+        user = authenticate(request, username=username, password=password)
+        if user is not None and user.is_active:
+            login(request, user)
+            next_url = request.GET.get('next', '/')
+            return redirect(next_url)
+        else:
+            error = True
+
+    return render(request, 'registration/login.html', {'form_error': error})
+
+
+def custom_logout(request):
+    logout(request)
+    return redirect('login')
 from .forms import PerfilForm
 
 
