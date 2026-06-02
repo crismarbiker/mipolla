@@ -51,6 +51,10 @@
     <a href="{% url 'polla:reglas' %}" class="{% if request.resolver_match.url_name == 'reglas' %}active{% endif %}">
       <i class="bi bi-book"></i> Reglas
     </a>
+    <a href="{% url 'polla:gran_pozo' %}" class="{% if request.resolver_match.url_name == 'gran_pozo' %}active{% endif %}"
+       style="{% if request.resolver_match.url_name == 'gran_pozo' %}{% else %}color:#FFD700 !important;border-color:rgba(255,215,0,.35) !important;background:rgba(255,215,0,.08) !important;{% endif %}">
+      <i class="bi bi-trophy-fill"></i> El Gran Pozo
+    </a>
     {% if user.is_staff %}
     <div class="dropdown">
       <a class="admin-btn dropdown-toggle" data-bs-toggle="dropdown" href="#">
@@ -122,12 +126,11 @@
   <a href="{% url 'polla:pronosticos' %}" class="{% if request.resolver_match.url_name == 'pronosticos' %}active{% endif %}">
     <i class="bi bi-pencil-square"></i>Pron.
   </a>
-  <!-- Logout as 4th tab on mobile -->
-  <form method="post" action="{% url 'logout' %}" style="flex:1;display:flex;">{% csrf_token %}
-    <button type="submit" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:rgba(255,100,100,.7);font-size:.57rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;background:none;border:none;cursor:pointer;">
-      <i class="bi bi-box-arrow-right" style="font-size:1.2rem;"></i>Salir
-    </button>
-  </form>
+  <!-- Gran Pozo as 4th tab (gold color) -->
+  <a href="{% url 'polla:gran_pozo' %}" class="{% if request.resolver_match.url_name == 'gran_pozo' %}active{% endif %}"
+     style="color:#F59E0B;">
+    <i class="bi bi-trophy-fill"></i>Pozo
+  </a>
 </nav>
 
 {% endif %}

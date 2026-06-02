@@ -90,6 +90,47 @@ def reglas(request):
     return render(request, 'polla/reglas.html')
 
 
+@login_required
+def gran_pozo(request):
+    from decimal import Decimal
+    from .models import TorneoConfig
+
+    torneo = TorneoConfig.get()
+    cuota = torneo.cuota
+
+    # Only count non-admin users with a valid 11-digit phone
+    participantes = User.objects.filter(
+        is_active=True, is_staff=False,
+        perfil__telefono__regex=r'^\d{11}$',
+    ).count()
+
+    DESCUENTO = Decimal('0.15')   # 15% commission
+    NETO_PORCENT = 1 - DESCUENTO  # 85% goes to pool
+
+    cuota_neta = cuota * NETO_PORCENT
+    total_pozo = cuota_neta * participantes
+
+    premio_1 = total_pozo * Decimal('0.50')
+    premio_2 = total_pozo * Decimal('0.35')
+    premio_3 = total_pozo * Decimal('0.15')
+
+    # Get current ranking to show who would win
+    ranking = _calcular_ranking()
+
+    return render(request, 'polla/gran_pozo.html', {
+        'cuota': cuota,
+        'cuota_neta': cuota_neta,
+        'participantes': participantes,
+        'total_pozo': total_pozo,
+        'premio_1': premio_1,
+        'premio_2': premio_2,
+        'premio_3': premio_3,
+        'descuento_pct': int(DESCUENTO * 100),
+        'ranking': ranking[:3],   # top 3
+        'all_ranking': ranking,
+    })
+
+
 def forgot_password(request):
     """Public page: enter 8-digit phone → new password sent ONLY via WhatsApp.
     Never shown on screen for security — only person with that phone can see it."""

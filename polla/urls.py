@@ -10,6 +10,7 @@ urlpatterns = [
     path('ranking/', views.ranking, name='ranking'),
     path('ranking/<str:username>/', views.pronosticos_usuario, name='pronosticos_usuario'),
     path('reglas/', views.reglas, name='reglas'),
+    path('gran-pozo/', views.gran_pozo, name='gran_pozo'),
     path('admin/usuarios/', views.admin_usuarios, name='admin_usuarios'),
     path('admin/usuarios/<int:pk>/toggle/', views.admin_toggle_usuario, name='admin_toggle_usuario'),
     path('admin/usuarios/<int:pk>/reset-password/', views.admin_reset_password, name='admin_reset_password'),

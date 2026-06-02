@@ -156,6 +156,10 @@ class TorneoConfig(models.Model):
                                       help_text='Color principal en hex, ej: #6366f1')
     color_secundario = models.CharField(max_length=7, default='#10b981',
                                         help_text='Color secundario en hex')
+    cuota = models.DecimalField(max_digits=8, decimal_places=2, default=100.00,
+                                help_text='Cuota de inscripción por participante en Bs.')
+    pozo_activo = models.BooleanField(default=True,
+                                      help_text='Mostrar la página El Gran Pozo')
 
     class Meta:
         verbose_name = 'Configuración del torneo'
