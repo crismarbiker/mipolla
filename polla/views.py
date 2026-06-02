@@ -132,8 +132,8 @@ def pronosticos_usuario(request, username):
     })
 
 
-@login_required
 def reglas(request):
+    """Public — accessible without login so potential participants can read rules."""
     return render(request, 'polla/reglas.html')
 
 
