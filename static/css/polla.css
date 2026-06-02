@@ -71,18 +71,39 @@ a { text-decoration: none; }
 }
 .top-nav-brand img { height: 26px; object-fit: contain; }
 
-.top-nav-links { display: flex; align-items: center; gap: .1rem; }
+.top-nav-links { display: flex; align-items: center; gap: .3rem; }
+/* ── NAV LINKS AS PILL BUTTONS ── */
 .top-nav-links a, .top-nav-links button {
-  color: rgba(255,255,255,.65); text-decoration: none;
-  font-size: .8rem; font-weight: 600;
-  padding: .32rem .7rem; border-radius: 6px;
+  color: rgba(255,255,255,.8);
+  text-decoration: none;
+  font-size: .78rem; font-weight: 700;
+  padding: .3rem .8rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.08);
   transition: all .15s; cursor: pointer;
-  background: none; border: none; white-space: nowrap;
+  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: .3rem;
 }
 .top-nav-links a:hover, .top-nav-links button:hover {
-  color: #fff; background: rgba(255,255,255,.1);
+  color: #fff;
+  background: rgba(255,255,255,.18);
+  border-color: rgba(255,255,255,.4);
 }
-.top-nav-links a.active { color: #fff; background: rgba(255,255,255,.15); }
+.top-nav-links a.active {
+  color: #fff;
+  background: rgba(255,255,255,.25);
+  border-color: rgba(255,255,255,.55);
+}
+.top-nav-links .admin-btn {
+  color: #FCD34D !important;
+  border-color: rgba(252,211,77,.4) !important;
+  background: rgba(252,211,77,.1) !important;
+}
+.top-nav-links .admin-btn:hover {
+  background: rgba(252,211,77,.22) !important;
+  border-color: rgba(252,211,77,.65) !important;
+}
 
 .nav-icon-btn {
   width: 34px; height: 34px; border-radius: 50%;
@@ -112,12 +133,20 @@ a { text-decoration: none; }
 .bot-nav a {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 2px;
-  color: rgba(255,255,255,.5);
+  color: rgba(255,255,255,.45);
   font-size: .57rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .3px; text-decoration: none; transition: color .15s;
+  letter-spacing: .3px; text-decoration: none; transition: all .15s;
+  position: relative;
 }
 .bot-nav a i { font-size: 1.2rem; }
-.bot-nav a.active { color: #fff; }
+.bot-nav a.active {
+  color: #fff;
+}
+.bot-nav a.active::before {
+  content: '';
+  position: absolute; top: 0; left: 25%; right: 25%; height: 2px;
+  background: #fff; border-radius: 0 0 3px 3px;
+}
 
 /* ── PAGE WRAP ───────────────────────────────── */
 .page-wrap { padding-top: calc(var(--nav-h) + 3px); }

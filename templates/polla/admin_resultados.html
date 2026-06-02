@@ -3,29 +3,39 @@
 {% block title %}Ingresar Resultados — Admin{% endblock %}
 
 {% block content %}
-<div class="page-hero px-3">
-  <h1><i class="bi bi-flag-fill text-success me-2"></i>Ingresar Resultados</h1>
-  <p class="text-muted small mb-0">
-    Ingresa cuántos goles marcó cada jugador. El resultado se calcula solo.
-    Autogol = <span class="text-warning fw-bold">-1</span> (suma al rival, no da bonus).
-  </p>
+<div class="page-header">
+  <div class="d-flex align-items-start justify-content-between gap-2">
+    <div>
+      <h1 class="page-title"><i class="bi bi-flag-fill me-2" style="color:#16a34a;"></i>Ingresar Resultados</h1>
+      <p class="page-sub">
+        Solo ingresa los goles por jugador — el marcador se calcula automáticamente.
+        <strong>Autogol = -1</strong> (suma al rival, no da bonus de goleadores).
+      </p>
+    </div>
+    <div class="d-flex flex-column gap-1 align-items-end">
+      <span class="badge" style="background:#fef3c7;color:#92400e;font-size:.65rem;padding:.25rem .5rem;border-radius:999px;">
+        <i class="bi bi-info-circle me-1"></i>
+        Para auto-fetch: configura el ID de football-data.org en Django Admin → Partidos
+      </span>
+    </div>
+  </div>
 </div>
 
 <!-- Filter tabs -->
 <div class="px-3 py-2 sticky-top d-flex tab-pills" style="top:var(--nav-h);background:var(--bg);z-index:100;border-bottom:1px solid var(--border);">
   <button class="tab-pill active" onclick="filterFase('all',this)">Todos</button>
   <button class="tab-pill" onclick="filterFase('pending',this)">Pendientes</button>
-  {% for fase in fases %}{% if fase.partidos.all %}
+  {% for fase in fases %}{% if fase._partidos_ordenados %}
   <button class="tab-pill" onclick="filterFase('f{{ fase.id_fase }}',this)">{{ fase.descripcion }}</button>
   {% endif %}{% endfor %}
 </div>
 
 <div class="px-3 py-3">
-  {% for fase in fases %}{% if fase.partidos.all %}
+  {% for fase in fases %}{% if fase._partidos_ordenados %}
   <div class="fase-section" data-fase="f{{ fase.id_fase }}">
     <div class="divider-text my-3">{{ fase.descripcion }}</div>
 
-    {% for partido in fase.partidos.all %}
+    {% for partido in fase._partidos_ordenados %}
     {% with pdata=partidos_con_jugadores|get_item:partido.id %}
     <div class="result-form-card mb-3 partido-card {% if partido.jugado %}jugado{% else %}pendiente{% endif %}"
          {% if partido.jugado %}style="opacity:.75;"{% endif %}>

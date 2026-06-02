@@ -600,25 +600,32 @@ def admin_resultados(request):
         messages.success(request, f'Resultado guardado: {partido} {partido.resultado_str}')
         return redirect('polla:admin_resultados')
 
+    # Order: pending matches first (by date asc), played last (by date desc)
     fases = Fase.objects.prefetch_related(
         'partidos__pais_local',
         'partidos__pais_visitante',
-        'partidos__goles__jugador',
+        'partidos__goles__jugador__pais',
     ).all()
 
-    # Pre-load players per country for the goal entry forms
-    from django.db.models import Prefetch
     partidos_con_jugadores = {}
     for fase in fases:
-        for partido in fase.partidos.all():
+        # Sort: pending first (by date), played last (reverse date)
+        partidos_ordenados = sorted(
+            fase.partidos.all(),
+            key=lambda p: (p.jugado, p.fecha or timezone.now())
+        )
+        for partido in partidos_ordenados:
             jugadores = list(Jugador.objects.filter(
                 Q(pais=partido.pais_local) | Q(pais=partido.pais_visitante)
-            ).select_related('pais').order_by('pais', 'nombre_completo'))
+            ).select_related('pais').order_by('pais__nombre', 'nombre_completo'))
             goles_existentes = {g.jugador_id: g.cantidad for g in partido.goles.all()}
             partidos_con_jugadores[partido.id] = {
                 'jugadores': jugadores,
                 'goles': goles_existentes,
+                'orden': partidos_ordenados,
             }
+        # Store ordered list on fase object for template
+        fase._partidos_ordenados = partidos_ordenados
 
     return render(request, 'polla/admin_resultados.html', {
         'fases': fases,

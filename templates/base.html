@@ -22,11 +22,9 @@
 <header class="top-nav" style="top:3px;">
   <a class="top-nav-brand" href="{% url 'polla:ranking' %}">
     {% if torneo.logo %}
-    <img src="{{ torneo.logo.url }}" alt="{{ torneo.nombre }}">
+    <img src="{{ torneo.logo.url }}" alt="{{ torneo.nombre }}" style="max-height:36px;max-width:120px;object-fit:contain;">
     {% else %}
-    <span style="font-size:1.2rem;">⚽</span>
-    <span>{{ torneo.nombre }}</span>
-    <span style="font-weight:400;font-size:.75em;color:rgba(255,255,255,.55);">{{ torneo.temporada }}</span>
+    <img src="{% static 'img/logo_mundial2026.png' %}" alt="Mundial 2026" style="max-height:36px;max-width:140px;object-fit:contain;">
     {% endif %}
   </a>
 
@@ -46,9 +44,8 @@
     </a>
     {% if user.is_staff %}
     <div class="dropdown">
-      <a class="dropdown-toggle" data-bs-toggle="dropdown" href="#"
-         style="color:#F59E0B;font-size:.8rem;font-weight:700;padding:.32rem .7rem;border-radius:6px;text-decoration:none;background:rgba(245,158,11,.15);">
-        <i class="bi bi-shield-lock me-1"></i>Admin
+      <a class="admin-btn dropdown-toggle" data-bs-toggle="dropdown" href="#">
+        <i class="bi bi-shield-lock"></i>Admin
       </a>
       <ul class="dropdown-menu dropdown-menu-end">
         <li><a class="dropdown-item" href="{% url 'polla:admin_resultados' %}"><i class="bi bi-flag me-2" style="color:#16a34a;"></i>Resultados</a></li>
