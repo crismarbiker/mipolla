@@ -112,7 +112,7 @@
 {% block extra_js %}
 <script>
 function filterFase(fase, btn) {
-  document.querySelectorAll('.fase-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.pill-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.querySelectorAll('.fase-section').forEach(s => {
     s.style.display = (fase === 'all' || s.dataset.fase === fase) ? '' : 'none';

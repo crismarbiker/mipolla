@@ -238,7 +238,7 @@ function togglePenales(id) {
 }
 
 function filterFase(key, btn) {
-  document.querySelectorAll('.fase-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.pill-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.querySelectorAll('.fase-section').forEach(s => {
     if (key === 'all') {
