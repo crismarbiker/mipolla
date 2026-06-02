@@ -21,6 +21,7 @@ services:
       - .env
     environment:
       DJANGO_SETTINGS_MODULE: core.settings.production
+      EVOLUTION_INSTANCE: mipolla
     depends_on:
       - db
     networks:
