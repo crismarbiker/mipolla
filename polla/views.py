@@ -836,35 +836,28 @@ def admin_resultados(request):
         messages.success(request, f'Resultado guardado: {partido} {partido.resultado_str}')
         return redirect('polla:admin_resultados')
 
-    fases = Fase.objects.prefetch_related(
-        'partidos__pais_local',
-        'partidos__pais_visitante',
-        'partidos__goles__jugador__pais',
-    ).all()
+    # Flat list: ALL pending matches first (asc by date), then ALL played (asc by date)
+    todos = list(Partido.objects.select_related(
+        'fase', 'pais_local', 'pais_visitante',
+    ).prefetch_related('goles__jugador__pais').all())
+
+    partidos_ordenados = sorted(
+        todos,
+        key=lambda p: (p.jugado, p.fecha or timezone.now())
+    )
 
     partidos_con_jugadores = {}
-    # fases_partidos: {fase.id_fase: [partidos sorted pending-first]}
-    fases_partidos = {}
-
-    for fase in fases:
-        partidos_ordenados = sorted(
-            fase.partidos.all(),
-            key=lambda p: (p.jugado, p.fecha or timezone.now())
-        )
-        fases_partidos[fase.id_fase] = partidos_ordenados
-
-        for partido in partidos_ordenados:
-            jugadores = list(Jugador.objects.filter(
-                Q(pais=partido.pais_local) | Q(pais=partido.pais_visitante)
-            ).select_related('pais').order_by('pais__nombre', 'nombre_completo'))
-            goles_existentes = {g.jugador_id: g.cantidad for g in partido.goles.all()}
-            partidos_con_jugadores[partido.id] = {
-                'jugadores': jugadores,
-                'goles': goles_existentes,
-            }
+    for partido in partidos_ordenados:
+        jugadores = list(Jugador.objects.filter(
+            Q(pais=partido.pais_local) | Q(pais=partido.pais_visitante)
+        ).select_related('pais').order_by('pais__nombre', 'nombre_completo'))
+        goles_existentes = {g.jugador_id: g.cantidad for g in partido.goles.all()}
+        partidos_con_jugadores[partido.id] = {
+            'jugadores': jugadores,
+            'goles': goles_existentes,
+        }
 
     return render(request, 'polla/admin_resultados.html', {
-        'fases': fases,
-        'fases_partidos': fases_partidos,
+        'partidos_ordenados': partidos_ordenados,
         'partidos_con_jugadores': partidos_con_jugadores,
     })
