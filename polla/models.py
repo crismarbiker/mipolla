@@ -190,16 +190,20 @@ class GolPartido(models.Model):
         verbose_name_plural = 'Goles en partidos'
 
     def recalcular_bonus_jugador(self):
-        """Recalculate selection bonus for this player.
-        Only positive goals count — own goals (cantidad < 0) don't award bonus."""
+        """Recalculate selection bonus per user for this player.
+        RULE: only counts goals in matches where the user made a prediction.
+        Own goals (cantidad < 0) never award bonus."""
         from django.db.models import Sum
-        total = GolPartido.objects.filter(
-            jugador=self.jugador,
-            cantidad__gt=0,         # own goals excluded
-        ).aggregate(t=Sum('cantidad'))['t'] or 0
-        SeleccionJugador.objects.filter(jugador=self.jugador).update(
-            puntos_acumulados=total * PUNTOS_POR_GOL
-        )
+        for seleccion in SeleccionJugador.objects.filter(jugador=self.jugador).select_related('usuario'):
+            # Only count goals in matches where THIS user predicted
+            pred_partidos = seleccion.usuario.pronosticos.values_list('partido_id', flat=True)
+            total = GolPartido.objects.filter(
+                jugador=self.jugador,
+                cantidad__gt=0,
+                partido_id__in=pred_partidos,
+            ).aggregate(t=Sum('cantidad'))['t'] or 0
+            seleccion.puntos_acumulados = total * PUNTOS_POR_GOL
+            seleccion.save(update_fields=['puntos_acumulados'])
 
     def __str__(self):
         return f"{self.jugador} - {self.partido} ({self.cantidad} gol)"
@@ -223,10 +227,24 @@ class PerfilUsuario(models.Model):
 
     @property
     def puntos_jugadores(self):
+        """Sum of goleador points — only from matches the user predicted."""
         from django.db.models import Sum
         return self.usuario.jugadores_seleccionados.aggregate(
             t=Sum('puntos_acumulados')
         )['t'] or 0
+
+    def recalcular_puntos_jugadores(self):
+        """Recalculate all goleador pts for this user respecting prediction rule."""
+        from django.db.models import Sum
+        pred_partidos = self.usuario.pronosticos.values_list('partido_id', flat=True)
+        for sel in self.usuario.jugadores_seleccionados.all():
+            total = GolPartido.objects.filter(
+                jugador=sel.jugador,
+                cantidad__gt=0,
+                partido_id__in=pred_partidos,
+            ).aggregate(t=Sum('cantidad'))['t'] or 0
+            sel.puntos_acumulados = total * PUNTOS_POR_GOL
+            sel.save(update_fields=['puntos_acumulados'])
 
     @property
     def puntos_totales(self):
