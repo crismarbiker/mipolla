@@ -800,7 +800,6 @@ def admin_resultados(request):
         messages.success(request, f'Resultado guardado: {partido} {partido.resultado_str}')
         return redirect('polla:admin_resultados')
 
-    # Order: pending matches first (by date asc), played last (by date desc)
     fases = Fase.objects.prefetch_related(
         'partidos__pais_local',
         'partidos__pais_visitante',
@@ -808,12 +807,16 @@ def admin_resultados(request):
     ).all()
 
     partidos_con_jugadores = {}
+    # fases_partidos: {fase.id_fase: [partidos sorted pending-first]}
+    fases_partidos = {}
+
     for fase in fases:
-        # Sort: pending first (by date), played last (reverse date)
         partidos_ordenados = sorted(
             fase.partidos.all(),
             key=lambda p: (p.jugado, p.fecha or timezone.now())
         )
+        fases_partidos[fase.id_fase] = partidos_ordenados
+
         for partido in partidos_ordenados:
             jugadores = list(Jugador.objects.filter(
                 Q(pais=partido.pais_local) | Q(pais=partido.pais_visitante)
@@ -822,12 +825,10 @@ def admin_resultados(request):
             partidos_con_jugadores[partido.id] = {
                 'jugadores': jugadores,
                 'goles': goles_existentes,
-                'orden': partidos_ordenados,
             }
-        # Store ordered list on fase object for template
-        fase._partidos_ordenados = partidos_ordenados
 
     return render(request, 'polla/admin_resultados.html', {
         'fases': fases,
+        'fases_partidos': fases_partidos,
         'partidos_con_jugadores': partidos_con_jugadores,
     })

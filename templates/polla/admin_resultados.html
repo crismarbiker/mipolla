@@ -43,17 +43,17 @@
 <div class="px-3 py-2 sticky-top d-flex tab-pills" style="top:var(--nav-h);background:var(--bg);z-index:100;border-bottom:1px solid var(--border);">
   <button class="tab-pill active" onclick="filterFase('all',this)">Todos</button>
   <button class="tab-pill" onclick="filterFase('pending',this)">Pendientes</button>
-  {% for fase in fases %}{% if fase._partidos_ordenados %}
+  {% for fase in fases %}{% with fp=fases_partidos|get_item:fase.id_fase %}{% if fp %}
   <button class="tab-pill" onclick="filterFase('f{{ fase.id_fase }}',this)">{{ fase.descripcion }}</button>
-  {% endif %}{% endfor %}
+  {% endif %}{% endwith %}{% endfor %}
 </div>
 
 <div class="px-3 py-3">
-  {% for fase in fases %}{% if fase._partidos_ordenados %}
+  {% for fase in fases %}{% with fp=fases_partidos|get_item:fase.id_fase %}{% if fp %}
   <div class="fase-section" data-fase="f{{ fase.id_fase }}">
     <div class="divider-text my-3">{{ fase.descripcion }}</div>
 
-    {% for partido in fase._partidos_ordenados %}
+    {% for partido in fp %}
     {% with pdata=partidos_con_jugadores|get_item:partido.id %}
     <div class="result-form-card mb-3 partido-card {% if partido.jugado %}jugado{% else %}pendiente{% endif %}"
          {% if partido.jugado %}style="opacity:.75;"{% endif %}>
@@ -233,7 +233,7 @@
     {% endwith %}
     {% endfor %}
   </div>
-  {% endif %}{% endfor %}
+  {% endif %}{% endwith %}{% endfor %}
 </div>
 {% endblock %}
 
