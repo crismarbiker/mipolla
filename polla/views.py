@@ -91,37 +91,45 @@ def reglas(request):
 
 
 def forgot_password(request):
-    """Public page: enter phone number → new password shown on screen + sent via WhatsApp."""
-    nueva_clave = None
+    """Public page: enter 8-digit phone → new password sent ONLY via WhatsApp.
+    Never shown on screen for security — only person with that phone can see it."""
+    sent = False
     error = None
 
     if request.method == 'POST':
         from .whatsapp import normalizar_telefono, generar_password
         from .models import PerfilUsuario
 
-        telefono_raw = request.POST.get('telefono', '').strip()
-        telefono = normalizar_telefono(telefono_raw)
+        # Accept 8-digit input; prefix 591 automatically
+        numero_raw = request.POST.get('numero', '').strip()
+        numero_limpio = normalizar_telefono(numero_raw)
 
-        if not telefono or len(telefono) != 11 or not telefono.startswith('591'):
-            error = 'Número inválido. Debe tener 11 dígitos comenzando con 591. Ej: 59170512621'
+        # Build full number: if they entered 8 digits, prepend 591
+        if len(numero_limpio) == 8:
+            telefono = '591' + numero_limpio
+        elif len(numero_limpio) == 11 and numero_limpio.startswith('591'):
+            telefono = numero_limpio
         else:
+            error = 'Número inválido. Ingresa los 8 dígitos de tu número. Ej: 70512621'
+
+        if not error:
             try:
                 perfil = PerfilUsuario.objects.get(telefono=telefono)
                 user = perfil.usuario
                 if not user.is_active:
-                    error = 'Cuenta desactivada. Contacta al administrador.'
+                    # Don't reveal — just say "sent"
+                    sent = True
                 else:
                     nueva = generar_password()
                     user.set_password(nueva)
                     user.save()
-                    # Try WhatsApp (may fail — password shown on screen as backup)
                     _enviar_solo_clave(telefono, nueva)
-                    nueva_clave = nueva  # Always show on screen
+                    sent = True
             except PerfilUsuario.DoesNotExist:
-                error = 'Número no encontrado. Verifica que sea el mismo que usaste al registrarte.'
+                sent = True  # Never reveal if number exists (security)
 
     return render(request, 'registration/forgot_password.html', {
-        'nueva_clave': nueva_clave,
+        'sent': sent,
         'error': error,
     })
 
@@ -328,16 +336,22 @@ def admin_usuarios(request):
         last_name = request.POST.get('last_name', '').strip()
         telefono_raw = request.POST.get('telefono', '').strip()
 
-        telefono = normalizar_telefono(telefono_raw)
+        numero_limpio = normalizar_telefono(telefono_raw)
+        # Auto-prepend 591 if user entered only 8 digits
+        if len(numero_limpio) == 8:
+            telefono = '591' + numero_limpio
+        elif len(numero_limpio) == 11 and numero_limpio.startswith('591'):
+            telefono = numero_limpio
+        else:
+            telefono = numero_limpio  # Will fail validation below
+
         nombre_completo = f"{first_name} {last_name}".strip()
 
         error = None
         if not first_name:
             error = 'El nombre es requerido.'
-        elif not telefono or len(telefono) != 11:
-            error = f'El número debe tener exactamente 11 dígitos: código de país (591) + 8 dígitos. Ej: 59170512621. Tienes {len(telefono)} dígitos.'
-        elif not telefono.startswith('591'):
-            error = 'El código de país debe ser 591 (Bolivia). Ej: 59170512621'
+        elif len(telefono) != 11 or not telefono.startswith('591'):
+            error = f'Ingresa los 8 dígitos del número (sin el 591). Ej: 70512621'
         elif User.objects.filter(username=telefono).exists():
             error = f'Ya existe un usuario con el número {telefono}.'
 
@@ -499,32 +513,37 @@ def _forward_to_elcarguero(raw_body: bytes):
 @login_required
 @user_passes_test(_es_admin)
 def admin_reset_password(request, pk):
-    """Generate new password for a user, show it on screen + try WhatsApp."""
+    """Admin-only: reset user password.
+    Admin can choose generic 'Polla2026' or generate a random one.
+    Password shown ONLY to admin, also tries WhatsApp."""
     user = get_object_or_404(User, pk=pk)
     from .whatsapp import generar_password
 
-    nueva = generar_password()
+    tipo = request.POST.get('tipo', 'random')
+    if tipo == 'generic':
+        nueva = 'Polla2026'
+    else:
+        nueva = generar_password()
+
     user.set_password(nueva)
     user.save()
 
     nombre = user.get_full_name() or user.username
-    wa_status = 'no enviado'
-
+    wa_status = '❌ no enviado'
     try:
         telefono = user.perfil.telefono
         if telefono and len(telefono) == 11:
             _enviar_solo_clave(telefono, nueva)
-            wa_status = f'enviado a +{telefono}'
+            wa_status = f'✅ WA enviado a +{telefono}'
     except Exception:
         pass
 
-    # Show password prominently in the flash message
     messages.success(
         request,
-        f'<strong>{nombre}</strong> — Nueva clave generada: '
-        f'<code style="font-size:1.1rem;font-weight:900;letter-spacing:2px;background:rgba(29,78,216,.15);'
-        f'padding:.15rem .5rem;border-radius:6px;color:var(--primary,#1D4ED8)">{nueva}</code> '
-        f'<span style="color:var(--muted,#6b7280);font-size:.8rem;">(WhatsApp: {wa_status})</span>'
+        f'🔑 <strong>{nombre}</strong> — Clave: '
+        f'<code style="font-size:1.1rem;font-weight:900;letter-spacing:2px;'
+        f'background:rgba(29,78,216,.15);padding:.15rem .6rem;border-radius:6px;">{nueva}</code> '
+        f'— {wa_status}'
     )
     return redirect('polla:admin_usuarios')
 
