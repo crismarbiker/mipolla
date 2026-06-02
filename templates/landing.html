@@ -4,181 +4,217 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#080c18">
+  <meta name="theme-color" content="#0d1b3e">
   <title>{{ torneo.nombre }} {{ torneo.temporada }} — Únete</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'css/polla.css' %}?v=dark3">
   <style>
-    /* ── Landing specific ── */
-    .hero { background:linear-gradient(135deg,#080c18 0%,#0d1535 50%,#080c18 100%); padding:2.5rem 1rem 2rem; }
-    .step-card { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem;margin-bottom:.75rem; }
-    .step-num { width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem;flex-shrink:0; }
-    .prize-card { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:.875rem 1rem;text-align:center; }
-    .rule-row { display:flex;align-items:flex-start;gap:.75rem;padding:.6rem 0;border-bottom:1px solid var(--border-s);font-size:.83rem; }
-    .rule-icon { font-size:1.2rem;flex-shrink:0;margin-top:.05rem; }
-    .cta-btn { display:block;width:100%;padding:.75rem;border-radius:999px;border:none;background:var(--primary);color:#fff;font-size:1rem;font-weight:900;text-align:center;cursor:pointer;text-decoration:none;box-shadow:0 4px 16px var(--prim-gl);transition:all .15s; }
-    .cta-btn:hover { background:var(--prim-d);color:#fff; }
-    .wa-btn { display:inline-flex;align-items:center;gap:.5rem;background:#25D366;color:#fff;border:none;padding:.65rem 1.25rem;border-radius:999px;font-weight:800;font-size:.9rem;text-decoration:none;transition:all .15s; }
-    .wa-btn:hover { background:#1da851;color:#fff; }
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background:#f4f6fb; color:#1a1d2e; -webkit-font-smoothing:antialiased; }
+    a { text-decoration:none; }
+
+    /* ── Header ── */
+    .hero {
+      background: linear-gradient(135deg, #0d1b3e 0%, #1a3a6e 50%, #0d1b3e 100%);
+      padding: 1.75rem 1.25rem 1.5rem;
+      text-align: center;
+    }
+    .stripe { height:4px; background:linear-gradient(90deg,#BF0D3E 33%,#002868 33% 66%,#006847 66%); }
+
+    /* ── Cards ── */
+    .card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.07); overflow:hidden; margin-bottom:.75rem; }
+    .card-header-bar { padding:.6rem 1rem; display:flex; align-items:center; gap:.5rem; }
+    .card-body { padding:1rem; }
+
+    /* ── Steps ── */
+    .step { display:flex; gap:.875rem; align-items:flex-start; background:#fff; border-radius:14px; padding:.875rem 1rem; margin-bottom:.6rem; box-shadow:0 1px 6px rgba(0,0,0,.06); }
+    .step-num { width:34px; height:34px; border-radius:50%; background:#1d4ed8; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:.9rem; flex-shrink:0; }
+
+    /* ── Scoring table ── */
+    .pts-row { display:flex; justify-content:space-between; align-items:center; padding:.5rem 0; border-bottom:1px solid #f0f1f5; }
+    .pts-row:last-child { border-bottom:none; }
+
+    /* ── Buttons ── */
+    .btn-main { display:block; width:100%; padding:.8rem; border-radius:999px; border:none; background:#1d4ed8; color:#fff; font-size:1rem; font-weight:900; text-align:center; cursor:pointer; text-decoration:none; box-shadow:0 4px 16px rgba(29,78,216,.3); transition:all .15s; }
+    .btn-main:hover { background:#1e40af; color:#fff; }
+    .btn-wa { display:inline-flex; align-items:center; gap:.5rem; background:#25D366; color:#fff; border:none; padding:.65rem 1.25rem; border-radius:999px; font-weight:800; font-size:.9rem; text-decoration:none; }
+    .btn-login { display:block; text-align:center; padding:.6rem; border-radius:999px; border:2px solid #e2e8f0; color:#64748b; font-weight:700; font-size:.85rem; transition:all .15s; }
+    .btn-login:hover { border-color:#1d4ed8; color:#1d4ed8; }
+
+    /* ── Prize cards ── */
+    .prize-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.5rem; }
+    .prize-card { background:#fff; border-radius:12px; padding:.75rem .5rem; text-align:center; box-shadow:0 1px 6px rgba(0,0,0,.06); }
+
+    /* ── Sections ── */
+    .section-label { font-size:.65rem; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#94a3b8; margin:.9rem 0 .4rem; padding:0 .1rem; }
+    .content-wrap { max-width:480px; margin:0 auto; padding:0 1rem 2rem; }
+
+    /* ── Info banner ── */
+    .info-banner { background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:.75rem 1rem; font-size:.8rem; color:#1e40af; line-height:1.6; margin-bottom:.75rem; }
+    .warn-banner { background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:.75rem 1rem; font-size:.8rem; color:#92400e; line-height:1.6; margin-bottom:.75rem; }
   </style>
 </head>
-<body style="background:var(--bg);">
+<body>
 
-<!-- Country stripe -->
-<div class="country-stripe"></div>
+<!-- 3-color stripe -->
+<div class="stripe"></div>
 
-<!-- Hero -->
-<div class="hero text-center" style="padding-top:1.5rem;">
-  <!-- Logo -->
-  <div class="mb-3">
+<!-- Hero (dark navy) -->
+<div class="hero">
+  <div style="margin-bottom:.875rem;">
     {% if torneo.logo %}
     <span style="background:#fff;border-radius:10px;padding:4px 10px;display:inline-block;">
-      <img src="{{ torneo.logo.url }}" style="max-height:48px;max-width:200px;object-fit:contain;">
+      <img src="{{ torneo.logo.url }}" style="max-height:46px;max-width:200px;object-fit:contain;">
     </span>
     {% else %}
     <span style="background:#fff;border-radius:10px;padding:4px 10px;display:inline-block;">
-      <img src="{% static 'img/logo_mundial2026.png' %}" style="max-height:48px;max-width:200px;object-fit:contain;">
+      <img src="{% static 'img/logo_mundial2026.png' %}" style="max-height:46px;max-width:200px;object-fit:contain;">
     </span>
     {% endif %}
   </div>
-
-  <h1 style="font-size:2rem;font-weight:900;color:#fff;margin:.2rem 0 .3rem;letter-spacing:-1px;">
+  <h1 style="color:#fff;font-size:1.9rem;font-weight:900;letter-spacing:-1px;margin-bottom:.2rem;">
     {{ torneo.nombre }}
   </h1>
-  <p style="color:var(--muted);font-size:.88rem;margin:0 0 1.25rem;">
+  <p style="color:rgba(255,255,255,.65);font-size:.85rem;margin-bottom:1.25rem;">
     {{ torneo.temporada }} · USA 🇺🇸 · Canada 🇨🇦 · México 🇲🇽
   </p>
-
-  <!-- Prize preview -->
-  <div style="display:inline-flex;gap:.5rem;background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.25);border-radius:14px;padding:.75rem 1.25rem;">
-    <div style="text-align:center;">
-      <div style="font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:#F59E0B;">Pozo estimado</div>
-      <div style="font-size:1.6rem;font-weight:900;color:#FFD700;line-height:1;">Bs. 1,000+</div>
-      <div style="font-size:.65rem;color:var(--muted);">crece con cada inscripción</div>
-    </div>
+  <div style="display:inline-block;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.35);border-radius:12px;padding:.6rem 1.25rem;text-align:center;">
+    <div style="font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#fbbf24;">Pozo acumulado</div>
+    <div style="font-size:1.8rem;font-weight:900;color:#fde047;line-height:1.1;">Bs. 1,000+</div>
+    <div style="font-size:.65rem;color:rgba(255,255,255,.5);">crece con cada inscripción</div>
   </div>
 </div>
 
-<!-- Main content -->
-<div class="px-3 py-4" style="max-width:480px;margin:0 auto;">
+<!-- Content on light background -->
+<div class="content-wrap">
 
   <!-- How to participate -->
-  <div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:.5rem;">
-    Cómo participar
-  </div>
+  <div class="section-label">Cómo participar</div>
 
-  <div class="step-card d-flex align-items-start gap-3">
+  <div class="step">
     <span class="step-num">1</span>
     <div>
-      <div style="font-weight:700;font-size:.88rem;">Paga la inscripción</div>
-      <div style="font-size:.78rem;color:var(--muted);">Bs. {{ torneo.cuota|floatformat:0 }} por participante. Escanea el QR de abajo con tu banco.</div>
+      <div style="font-weight:700;font-size:.9rem;color:#1a1d2e;">Paga la inscripción</div>
+      <div style="font-size:.78rem;color:#64748b;margin-top:.15rem;">Bs. {{ torneo.cuota|floatformat:0 }} · Escanea el QR con tu banco o transfiere a la cuenta indicada.</div>
     </div>
   </div>
 
-  <div class="step-card d-flex align-items-start gap-3">
+  <div class="step">
     <span class="step-num">2</span>
     <div>
-      <div style="font-weight:700;font-size:.88rem;">Envía el comprobante</div>
-      <div style="font-size:.78rem;color:var(--muted);">Manda la captura de tu pago al WhatsApp <strong>+591 {{ torneo.whatsapp_pago|slice:"3:" }}</strong>.</div>
+      <div style="font-weight:700;font-size:.9rem;color:#1a1d2e;">Envía el comprobante</div>
+      <div style="font-size:.78rem;color:#64748b;margin-top:.15rem;">Manda la captura de tu pago al WhatsApp <strong style="color:#1a1d2e;">+591 {{ torneo.whatsapp_pago|slice:"3:" }}</strong>.</div>
     </div>
   </div>
 
-  <div class="step-card d-flex align-items-start gap-3">
-    <span class="step-num">3</span>
+  <div class="step">
+    <span class="step-num" style="background:#16a34a;">3</span>
     <div>
-      <div style="font-weight:700;font-size:.88rem;">Recibe tu acceso</div>
-      <div style="font-size:.78rem;color:var(--muted);">Una vez validado el pago, te enviamos tu usuario y contraseña por WhatsApp.</div>
+      <div style="font-weight:700;font-size:.9rem;color:#1a1d2e;">Recibe tu acceso</div>
+      <div style="font-size:.78rem;color:#64748b;margin-top:.15rem;">Validamos el pago y te enviamos tu usuario y contraseña por WhatsApp.</div>
     </div>
   </div>
 
-  <!-- QR Payment -->
-  <div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:.9rem 0 .5rem;">
-    Pago — Bs. {{ torneo.cuota|floatformat:0 }}
-  </div>
+  <!-- Payment QR -->
+  <div class="section-label">Pago — Bs. {{ torneo.cuota|floatformat:0 }}</div>
 
-  <div class="card card-p text-center mb-3">
-    {% if torneo.qr_pago %}
-    <img src="{{ torneo.qr_pago.url }}" alt="QR de pago"
-         style="max-width:280px;width:100%;border-radius:10px;margin:0 auto .75rem;display:block;">
-    {% else %}
-    <div style="background:var(--surface);border-radius:10px;padding:2rem;margin-bottom:.75rem;">
-      <i class="bi bi-qr-code" style="font-size:4rem;color:var(--muted);"></i>
-      <p style="font-size:.75rem;color:var(--muted);margin:.5rem 0 0;">QR pendiente de configurar</p>
-    </div>
-    {% endif %}
-    <div style="font-size:.8rem;line-height:1.6;">
-      <div style="font-weight:700;">CRISTIAM MARCELO MAMANI VIDES</div>
-      <div style="color:var(--muted);">Mercantil Santa Cruz · Cta. 1001497274</div>
-      <div style="font-size:.72rem;color:var(--muted);">Concepto: Mi Polla 2026</div>
+  <div class="card">
+    <div class="card-body text-center">
+      {% if torneo.qr_pago %}
+      <img src="{{ torneo.qr_pago.url }}" alt="QR de pago"
+           style="max-width:260px;width:100%;border-radius:10px;margin:0 auto .75rem;display:block;">
+      {% else %}
+      <div style="background:#f8fafc;border-radius:10px;padding:2rem;margin-bottom:.75rem;border:2px dashed #e2e8f0;">
+        <i class="bi bi-qr-code" style="font-size:3.5rem;color:#94a3b8;"></i>
+        <p style="font-size:.75rem;color:#94a3b8;margin:.5rem 0 0;">QR pendiente de configurar por el admin</p>
+      </div>
+      {% endif %}
+      <div style="font-size:.82rem;line-height:1.7;">
+        <div style="font-weight:800;color:#1a1d2e;">CRISTIAM MARCELO MAMANI VIDES</div>
+        <div style="color:#64748b;">Mercantil Santa Cruz · Cta. <strong style="color:#1a1d2e;">1001497274</strong></div>
+        <div style="font-size:.72rem;color:#94a3b8;">Concepto: Mi Polla 2026</div>
+      </div>
     </div>
   </div>
 
   <!-- WhatsApp CTA -->
-  <div class="text-center mb-4">
-    <a href="https://wa.me/{{ torneo.whatsapp_pago }}?text=Hola!%20Quiero%20participar%20en%20la%20polla%20del%20Mundial%202026.%20Adjunto%20mi%20comprobante%20de%20pago%20de%20Bs.%20{{ torneo.cuota|floatformat:0 }}"
-       class="wa-btn" target="_blank">
+  <div class="text-center" style="margin-bottom:1rem;">
+    <a href="https://wa.me/{{ torneo.whatsapp_pago }}?text=Hola!%20Quiero%20participar%20en%20la%20polla%20del%20Mundial%202026.%20Adjunto%20mi%20comprobante%20de%20Bs.%20{{ torneo.cuota|floatformat:0 }}"
+       class="btn-wa" target="_blank">
       <i class="bi bi-whatsapp" style="font-size:1.1rem;"></i>
       Enviar comprobante por WhatsApp
     </a>
-    <div style="font-size:.7rem;color:var(--muted);margin-top:.4rem;">+591 {{ torneo.whatsapp_pago|slice:"3:" }}</div>
+    <div style="font-size:.7rem;color:#94a3b8;margin-top:.35rem;">+591 {{ torneo.whatsapp_pago|slice:"3:" }}</div>
   </div>
 
-  <!-- Rules summary -->
-  <div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:.5rem;">
-    Tabla de puntos
-  </div>
-  <div class="card card-p mb-3">
-    <div class="rule-row"><span class="rule-icon">🎯</span><div><strong>Resultado exacto:</strong> <span style="color:var(--green);">+3 pts</span> · más el bono de marcador correcto</div></div>
-    <div class="rule-row"><span class="rule-icon">✅</span><div><strong>Ganador o empate correcto</strong> (no exacto): <span style="color:var(--gold);">+3 pts</span></div></div>
-    <div class="rule-row"><span class="rule-icon">🔵</span><div><strong>Marcador exacto</strong> (adicional): <span style="color:var(--info);">+2 pts</span></div></div>
-    <div class="rule-row"><span class="rule-icon">🎱</span><div><strong>Penales</strong> (eliminatorias — aciertas si hay/no hay): <span style="color:var(--info);">+2 pts</span></div></div>
-    <div class="rule-row"><span class="rule-icon">👟</span><div><strong>Gol de tu jugador seleccionado</strong> (5 jugadores): <span style="color:#a855f7;">+2 pts por gol</span></div></div>
-    <div class="rule-row" style="border-bottom:none;"><span class="rule-icon">🏆</span><div><strong>Campeón correcto:</strong> <span style="color:var(--gold);">+15 pts</span></div></div>
+  <!-- Scoring rules -->
+  <div class="section-label">Tabla de puntos</div>
+  <div class="card">
+    <div class="card-header-bar" style="background:#1d4ed8;">
+      <i class="bi bi-star-fill" style="color:#fde047;"></i>
+      <span style="color:#fff;font-weight:800;font-size:.85rem;">¿Cómo se puntúa?</span>
+    </div>
+    <div class="card-body">
+      <div class="pts-row">
+        <span style="font-size:.84rem;color:#374151;">Ganador o empate correcto</span>
+        <span style="font-weight:900;color:#d97706;white-space:nowrap;margin-left:.5rem;">+3 pts</span>
+      </div>
+      <div class="pts-row">
+        <span style="font-size:.84rem;color:#374151;">Marcador exacto (adicional)</span>
+        <span style="font-weight:900;color:#0284c7;white-space:nowrap;margin-left:.5rem;">+2 pts</span>
+      </div>
+      <div class="pts-row">
+        <span style="font-size:.84rem;color:#374151;">Penales correcto (eliminatorias)</span>
+        <span style="font-weight:900;color:#0284c7;white-space:nowrap;margin-left:.5rem;">+2 pts</span>
+      </div>
+      <div class="pts-row">
+        <span style="font-size:.84rem;color:#374151;">Gol de tu jugador seleccionado</span>
+        <span style="font-weight:900;color:#7c3aed;white-space:nowrap;margin-left:.5rem;">+2 pts</span>
+      </div>
+      <div class="pts-row">
+        <span style="font-size:.84rem;color:#374151;">Campeón correcto</span>
+        <span style="font-weight:900;color:#d97706;white-space:nowrap;margin-left:.5rem;">+15 pts</span>
+      </div>
+      <div style="font-size:.72rem;color:#94a3b8;margin-top:.5rem;padding-top:.4rem;border-top:1px solid #f1f5f9;">
+        Podés elegir hasta 5 jugadores antes del primer partido.
+        En eliminatorias: el marcador total incluye goles de penales.
+      </div>
+    </div>
   </div>
 
   <!-- Prizes -->
-  <div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:.5rem;">
-    Premios (del pozo acumulado)
+  <div class="section-label">Distribución de premios</div>
+  <div class="prize-grid" style="margin-bottom:1rem;">
+    <div class="prize-card" style="border-top:3px solid #fde047;">
+      <div style="font-size:1.5rem;">🥇</div>
+      <div style="font-weight:900;color:#d97706;font-size:1rem;">50%</div>
+      <div style="font-size:.65rem;color:#94a3b8;">1er lugar</div>
+    </div>
+    <div class="prize-card" style="border-top:3px solid #9ca3af;">
+      <div style="font-size:1.5rem;">🥈</div>
+      <div style="font-weight:900;color:#6b7280;font-size:1rem;">35%</div>
+      <div style="font-size:.65rem;color:#94a3b8;">2do lugar</div>
+    </div>
+    <div class="prize-card" style="border-top:3px solid #d97706;">
+      <div style="font-size:1.5rem;">🥉</div>
+      <div style="font-weight:900;color:#92400e;font-size:1rem;">15%</div>
+      <div style="font-size:.65rem;color:#94a3b8;">3er lugar</div>
+    </div>
   </div>
-  <div class="row g-2 mb-4">
-    <div class="col-4">
-      <div class="prize-card" style="border-color:rgba(255,215,0,.3);">
-        <div style="font-size:1.5rem;">🥇</div>
-        <div style="font-weight:900;color:#FFD700;font-size:.95rem;">50%</div>
-        <div style="font-size:.65rem;color:var(--muted);">1er lugar</div>
-      </div>
-    </div>
-    <div class="col-4">
-      <div class="prize-card">
-        <div style="font-size:1.5rem;">🥈</div>
-        <div style="font-weight:900;color:#c0c0c0;font-size:.95rem;">35%</div>
-        <div style="font-size:.65rem;color:var(--muted);">2do lugar</div>
-      </div>
-    </div>
-    <div class="col-4">
-      <div class="prize-card">
-        <div style="font-size:1.5rem;">🥉</div>
-        <div style="font-weight:900;color:#cd7f32;font-size:.95rem;">15%</div>
-        <div style="font-size:.65rem;color:var(--muted);">3er lugar</div>
-      </div>
-    </div>
+
+  <!-- Important note -->
+  <div class="info-banner">
+    <i class="bi bi-clock-fill me-1"></i>
+    <strong>Fecha límite de inscripción:</strong> antes del primer partido (11 de junio 2026).
+    Los jugadores y el campeón solo se pueden seleccionar antes del inicio del torneo.
   </div>
 
   <!-- Main CTA -->
-  <a href="{% url 'polla:forgot_password' %}" class="cta-btn mb-2">
-    <i class="bi bi-person-plus me-2"></i>Quiero participar
+  <a href="{% url 'login' %}" class="btn-main" style="margin-bottom:.6rem;">
+    <i class="bi bi-box-arrow-in-right me-2"></i>Ya tengo acceso — Iniciar sesión
   </a>
-  <div class="text-center mt-2">
-    <a href="{% url 'login' %}" style="font-size:.8rem;color:var(--muted);text-decoration:none;">
-      Ya tengo acceso — <span style="color:var(--primary);">Iniciar sesión</span>
-    </a>
-  </div>
-
-  <!-- Footer -->
-  <div class="text-center mt-4 pt-3" style="border-top:1px solid var(--border);font-size:.7rem;color:var(--muted);">
-    ⚽ {{ torneo.nombre }} {{ torneo.temporada }}
+  <div style="text-align:center;font-size:.78rem;color:#94a3b8;padding:.3rem 0 1rem;">
+    ¿No tienes acceso? Paga la inscripción y envía tu comprobante por WhatsApp ↑
   </div>
 
 </div>
