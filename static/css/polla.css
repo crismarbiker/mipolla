@@ -51,11 +51,9 @@ a { text-decoration: none; }
 
 /* ── THREE-COUNTRY STRIPE ────────────────────── */
 .country-stripe {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1050;
   height: 3px;
-  background: linear-gradient(90deg,
-    var(--usa-red) 33.3%,
-    #002868 33.3% 66.6%,
-    var(--mex-green) 66.6%);
+  background: linear-gradient(90deg, #BF0D3E 0%, #BF0D3E 33.33%, #002868 33.33%, #002868 66.66%, #006847 66.66%, #006847 100%);
 }
 
 /* ── TOP NAV (FIFA deep blue) ────────────────── */
@@ -73,8 +71,7 @@ a { text-decoration: none; }
 }
 .top-nav-brand img { height: 26px; object-fit: contain; }
 
-.top-nav-links { display: none; align-items: center; gap: .1rem; }
-@media (min-width: 992px) { .top-nav-links { display: flex; } }
+.top-nav-links { display: flex; align-items: center; gap: .1rem; }
 .top-nav-links a, .top-nav-links button {
   color: rgba(255,255,255,.65); text-decoration: none;
   font-size: .8rem; font-weight: 600;
@@ -99,15 +96,17 @@ a { text-decoration: none; }
 
 /* ── BOTTOM NAV (mobile) ─────────────────────── */
 .bot-nav {
-  display: none; position: fixed;
-  bottom: 0; left: 0; right: 0;
+  display: flex;
+  position: fixed; bottom: 0; left: 0; right: 0;
   height: var(--bot-h); z-index: 1040;
   background: var(--wine-d);
   border-top: 1px solid rgba(255,255,255,.1);
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
+@media (min-width: 992px) {
+  .bot-nav { display: none !important; }
+}
 @media (max-width: 991.98px) {
-  .bot-nav { display: flex; }
   .page-wrap { padding-bottom: 68px; }
 }
 .bot-nav a {

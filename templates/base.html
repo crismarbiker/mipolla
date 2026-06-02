@@ -16,11 +16,10 @@
 <body>
 {% if user.is_authenticated %}
 
-<!-- Country stripe: 🔴USA · 🔵Canada · 🟢México -->
+<!-- Country stripe (position:fixed, 3px) -->
 <div class="country-stripe"></div>
-
-<!-- TOP NAV -->
-<header class="top-nav" style="top:3px;height:51px;">
+<!-- TOP NAV (starts at 3px to leave room for stripe) -->
+<header class="top-nav" style="top:3px;">
   <a class="top-nav-brand" href="{% url 'polla:ranking' %}">
     {% if torneo.logo %}
     <img src="{{ torneo.logo.url }}" alt="{{ torneo.nombre }}">
@@ -31,8 +30,8 @@
     {% endif %}
   </a>
 
-  <!-- Desktop links -->
-  <nav class="top-nav-links">
+  <!-- Desktop links (hidden on mobile via Bootstrap) -->
+  <nav class="top-nav-links d-none d-lg-flex">
     <a href="{% url 'polla:ranking' %}" class="{% if request.resolver_match.url_name in 'ranking,home,pronosticos_usuario' %}active{% endif %}">
       <i class="bi bi-trophy me-1"></i>Ranking
     </a>
@@ -98,8 +97,8 @@
   </div>
 </header>
 
-<!-- BOTTOM NAV -->
-<nav class="bot-nav">
+<!-- BOTTOM NAV (mobile only — Bootstrap d-lg-none handles it) -->
+<nav class="bot-nav d-lg-none">
   <a href="{% url 'polla:ranking' %}" class="{% if request.resolver_match.url_name in 'ranking,home,pronosticos_usuario' %}active{% endif %}">
     <i class="bi bi-trophy{% if request.resolver_match.url_name == 'ranking' %}-fill{% endif %}"></i>Ranking
   </a>
