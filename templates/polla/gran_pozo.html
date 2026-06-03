@@ -104,80 +104,25 @@
       <thead>
         <tr>
           <th>Posición</th>
-          <th class="center" style="width:80px;">%</th>
+          <th class="center">%</th>
           <th class="center">Premio</th>
-          <th>Líder actual</th>
         </tr>
       </thead>
       <tbody>
-        <!-- 1st place -->
         <tr>
-          <td>
-            <span style="font-size:1.1rem;">🥇</span>
-            <strong style="color:#FFD700;margin-left:.3rem;">Primer Lugar</strong>
-            {% for pos in posiciones %}{% if pos.pos_idx == 0 and pos.n > 1 %}
-            <span class="badge b-gold ms-1" style="font-size:.6rem;">{{ pos.n }} empatados</span>
-            {% endif %}{% endfor %}
-          </td>
-          <td class="center" style="font-weight:900;font-size:1.05rem;color:#FFD700;">50%</td>
-          <td class="center">
-            <div class="pts" style="color:#FFD700;">Bs. {{ premio_1|floatformat:0 }}</div>
-            {% for pos in posiciones %}{% if pos.pos_idx == 0 and pos.n > 1 %}
-            <div style="font-size:.6rem;color:var(--muted);">c/u Bs.{{ pos.por_persona|floatformat:0 }}</div>
-            {% endif %}{% endfor %}
-          </td>
-          <td style="font-size:.82rem;">
-            {% if posiciones %}{% for pos in posiciones %}{% if pos.pos_idx == 0 %}{% for d in pos.usuarios %}
-            <div>{{ d.usuario.get_full_name|default:d.usuario.username }} <span style="color:var(--muted);font-size:.7rem;">{{ d.puntos }}pts</span></div>
-            {% endfor %}{% endif %}{% endfor %}
-            {% else %}<span style="color:var(--muted);font-size:.78rem;">— sin resultados aún</span>{% endif %}
-          </td>
+          <td><span style="font-size:1.2rem;">🥇</span> <strong style="color:#FFD700;">Primer Lugar</strong></td>
+          <td class="center" style="font-weight:900;font-size:1.1rem;color:#FFD700;">50%</td>
+          <td class="pts" style="color:#FFD700;">Bs. {{ premio_1|floatformat:0 }}</td>
         </tr>
-        <!-- 2nd place -->
         <tr>
-          <td>
-            <span style="font-size:1.1rem;">🥈</span>
-            <strong style="color:#c0c0c0;margin-left:.3rem;">Segundo Lugar</strong>
-            {% for pos in posiciones %}{% if pos.pos_idx == 1 and pos.n > 1 %}
-            <span class="badge b-gray ms-1" style="font-size:.6rem;">{{ pos.n }} empatados</span>
-            {% endif %}{% endfor %}
-          </td>
-          <td class="center" style="font-weight:900;font-size:1.05rem;color:#c0c0c0;">35%</td>
-          <td class="center">
-            <div class="pts" style="color:#c0c0c0;">Bs. {{ premio_2|floatformat:0 }}</div>
-            {% for pos in posiciones %}{% if pos.pos_idx == 1 and pos.n > 1 %}
-            <div style="font-size:.6rem;color:var(--muted);">c/u Bs.{{ pos.por_persona|floatformat:0 }}</div>
-            {% endif %}{% endfor %}
-          </td>
-          <td style="font-size:.82rem;">
-            {% if posiciones %}{% for pos in posiciones %}{% if pos.pos_idx == 1 %}{% for d in pos.usuarios %}
-            <div>{{ d.usuario.get_full_name|default:d.usuario.username }} <span style="color:var(--muted);font-size:.7rem;">{{ d.puntos }}pts</span></div>
-            {% endfor %}{% endif %}{% endfor %}
-            {% else %}<span style="color:var(--muted);font-size:.78rem;">— sin resultados aún</span>{% endif %}
-          </td>
+          <td><span style="font-size:1.2rem;">🥈</span> <strong style="color:#c0c0c0;">Segundo Lugar</strong></td>
+          <td class="center" style="font-weight:900;font-size:1.1rem;color:#c0c0c0;">35%</td>
+          <td class="pts" style="color:#c0c0c0;">Bs. {{ premio_2|floatformat:0 }}</td>
         </tr>
-        <!-- 3rd place -->
         <tr>
-          <td>
-            <span style="font-size:1.1rem;">🥉</span>
-            <strong style="color:#cd7f32;margin-left:.3rem;">Tercer Lugar</strong>
-            {% for pos in posiciones %}{% if pos.pos_idx == 2 and pos.n > 1 %}
-            <span class="badge b-gray ms-1" style="font-size:.6rem;">{{ pos.n }} empatados</span>
-            {% endif %}{% endfor %}
-          </td>
-          <td class="center" style="font-weight:900;font-size:1.05rem;color:#cd7f32;">15%</td>
-          <td class="center">
-            <div class="pts" style="color:#cd7f32;">Bs. {{ premio_3|floatformat:0 }}</div>
-            {% for pos in posiciones %}{% if pos.pos_idx == 2 and pos.n > 1 %}
-            <div style="font-size:.6rem;color:var(--muted);">c/u Bs.{{ pos.por_persona|floatformat:0 }}</div>
-            {% endif %}{% endfor %}
-          </td>
-          <td style="font-size:.82rem;">
-            {% if posiciones %}{% for pos in posiciones %}{% if pos.pos_idx == 2 %}{% for d in pos.usuarios %}
-            <div>{{ d.usuario.get_full_name|default:d.usuario.username }} <span style="color:var(--muted);font-size:.7rem;">{{ d.puntos }}pts</span></div>
-            {% endfor %}{% endif %}{% endfor %}
-            {% else %}<span style="color:var(--muted);font-size:.78rem;">— sin resultados aún</span>{% endif %}
-          </td>
+          <td><span style="font-size:1.2rem;">🥉</span> <strong style="color:#cd7f32;">Tercer Lugar</strong></td>
+          <td class="center" style="font-weight:900;font-size:1.1rem;color:#cd7f32;">15%</td>
+          <td class="pts" style="color:#cd7f32;">Bs. {{ premio_3|floatformat:0 }}</td>
         </tr>
       </tbody>
     </table>
