@@ -148,7 +148,7 @@ def gran_pozo(request):
     # Only count non-admin users with a valid 11-digit phone
     participantes = User.objects.filter(
         is_active=True, is_staff=False,
-        perfil__telefono__regex=r'^\d{11}$',
+        perfil__telefono__regex=r'^\d{7,15}$',
     ).count()
 
     DESCUENTO = Decimal('0.15')   # 15% commission
@@ -405,7 +405,7 @@ def _calcular_ranking():
     usuarios = User.objects.filter(
         is_active=True,
         is_staff=False,
-        perfil__telefono__regex=r'^\d{11}$',
+        perfil__telefono__regex=r'^\d{7,15}$',
     ).prefetch_related('pronosticos', 'perfil', 'jugadores_seleccionados')
 
     datos = []
