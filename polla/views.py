@@ -25,15 +25,15 @@ def custom_login(request):
 
     error = None
     if request.method == 'POST':
-        username_raw = request.POST.get('username', '').strip()
+        codigo_pais = _norm_tel(request.POST.get('codigo_pais', '591').strip())
+        numero_local = _norm_tel(request.POST.get('numero_local', '').strip())
         password = request.POST.get('password', '')
 
-        # Auto-prepend 591 if 8-digit number
-        limpio = _norm_tel(username_raw)
-        if len(limpio) == 8:
-            username = '591' + limpio
+        # Build username from country code + local number
+        if codigo_pais and numero_local:
+            username = codigo_pais + numero_local
         else:
-            username = username_raw
+            username = numero_local  # fallback
 
         user = authenticate(request, username=username, password=password)
         if user is not None and user.is_active:
@@ -229,15 +229,13 @@ def forgot_password(request):
         from .whatsapp import normalizar_telefono, generar_password
         from .models import PerfilUsuario
 
-        numero_raw = request.POST.get('numero', '').strip()
-        numero_limpio = normalizar_telefono(numero_raw)
+        codigo_pais = normalizar_telefono(request.POST.get('codigo_pais', '591').strip())
+        numero_local = normalizar_telefono(request.POST.get('numero_local', '').strip())
 
-        if len(numero_limpio) == 8:
-            telefono = '591' + numero_limpio
-        elif len(numero_limpio) == 11 and numero_limpio.startswith('591'):
-            telefono = numero_limpio
+        if not codigo_pais or not numero_local or len(numero_local) < 6:
+            error = 'Ingresa tu código de país y número de teléfono.'
         else:
-            error = 'Número inválido. Ingresa los 8 dígitos de tu número. Ej: 70512621'
+            telefono = codigo_pais + numero_local
 
         if not error:
             try:
@@ -481,26 +479,23 @@ def admin_usuarios(request):
     if request.method == 'POST':
         first_name = request.POST.get('first_name', '').strip()
         last_name = request.POST.get('last_name', '').strip()
-        telefono_raw = request.POST.get('telefono', '').strip()
-
-        numero_limpio = normalizar_telefono(telefono_raw)
-        # Auto-prepend 591 if user entered only 8 digits
-        if len(numero_limpio) == 8:
-            telefono = '591' + numero_limpio
-        elif len(numero_limpio) == 11 and numero_limpio.startswith('591'):
-            telefono = numero_limpio
-        else:
-            telefono = numero_limpio  # Will fail validation below
+        codigo_pais = normalizar_telefono(request.POST.get('codigo_pais', '591').strip())
+        numero_local = normalizar_telefono(request.POST.get('numero_local', '').strip())
+        telefono = codigo_pais + numero_local  # e.g. "591" + "70512621" = "59170512621"
 
         nombre_completo = f"{first_name} {last_name}".strip()
 
         error = None
         if not first_name:
             error = 'El nombre es requerido.'
-        elif len(telefono) != 11 or not telefono.startswith('591'):
-            error = f'Ingresa los 8 dígitos del número (sin el 591). Ej: 70512621'
+        elif not codigo_pais or not numero_local:
+            error = 'Ingresa el código de país y el número.'
+        elif len(numero_local) < 6 or len(numero_local) > 12:
+            error = f'El número local debe tener entre 6 y 12 dígitos. Ej: 70512621 (Bolivia) o 832086166 (Irlanda).'
+        elif len(telefono) > 15:
+            error = 'Número demasiado largo. Verifica el código de país.'
         elif User.objects.filter(username=telefono).exists():
-            error = f'Ya existe un usuario con el número {telefono}.'
+            error = f'Ya existe un usuario con el número +{telefono}.'
 
         if error:
             messages.error(request, error)
