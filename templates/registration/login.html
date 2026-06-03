@@ -37,30 +37,32 @@
   <form method="post" autocomplete="on">
     {% csrf_token %}
 
-    <!-- Phone with country code selector -->
+    <!-- Phone: country code + local number (separate fields, no overflow:hidden) -->
     <div class="form-field">
       <label style="color:rgba(255,255,255,.7);">Número de WhatsApp</label>
-      <div style="display:flex;gap:0;border:2px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);transition:border-color .15s;" id="user-wrap"
-           onfocusin="this.style.borderColor='var(--primary)'" onfocusout="this.style.borderColor='var(--border)'">
-        <select name="codigo_pais" autocomplete="tel-country-code"
-                style="background:rgba(255,255,255,.08);border:none;border-right:1px solid var(--border);outline:none;padding:.55rem .5rem;font-size:.85rem;font-weight:800;color:#fff;cursor:pointer;flex-shrink:0;">
-          <option value="591" style="background:#1a1d2e;">🇧🇴 +591</option>
-          <option value="353" style="background:#1a1d2e;">🇮🇪 +353</option>
-          <option value="1"   style="background:#1a1d2e;">🇺🇸 +1</option>
-          <option value="54"  style="background:#1a1d2e;">🇦🇷 +54</option>
-          <option value="55"  style="background:#1a1d2e;">🇧🇷 +55</option>
-          <option value="56"  style="background:#1a1d2e;">🇨🇱 +56</option>
-          <option value="57"  style="background:#1a1d2e;">🇨🇴 +57</option>
-          <option value="51"  style="background:#1a1d2e;">🇵🇪 +51</option>
-          <option value="52"  style="background:#1a1d2e;">🇲🇽 +52</option>
-          <option value="34"  style="background:#1a1d2e;">🇪🇸 +34</option>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:0;border:2px solid var(--border);border-radius:10px;background:var(--surface);">
+        <select name="codigo_pais"
+                style="background:rgba(255,255,255,.06);border:none;border-right:1px solid var(--border);border-radius:8px 0 0 8px;outline:none;padding:.55rem .5rem;font-size:.82rem;font-weight:800;color:#fff;cursor:pointer;-webkit-appearance:none;appearance:none;text-align:center;">
+          <option value="591">🇧🇴 +591</option>
+          <option value="353">🇮🇪 +353</option>
+          <option value="1">🇺🇸 +1</option>
+          <option value="54">🇦🇷 +54</option>
+          <option value="55">🇧🇷 +55</option>
+          <option value="56">🇨🇱 +56</option>
+          <option value="57">🇨🇴 +57</option>
+          <option value="51">🇵🇪 +51</option>
+          <option value="52">🇲🇽 +52</option>
+          <option value="34">🇪🇸 +34</option>
         </select>
-        <input type="tel" name="numero_local" id="numero_local"
+        <input type="tel"
+               name="numero_local"
+               id="numero_local"
                placeholder="70000000"
-               autocomplete="tel-local"
                inputmode="numeric"
-               autofocus required
-               style="flex:1;background:transparent;border:none;outline:none;padding:.55rem .85rem;color:#fff;font-size:1.05rem;font-weight:700;letter-spacing:1px;min-width:0;">
+               autocomplete="tel-national"
+               autofocus
+               required
+               style="width:100%;background:transparent;border:none;border-radius:0 8px 8px 0;outline:none;padding:.6rem .85rem;color:#fff;font-size:1.05rem;font-weight:700;letter-spacing:1px;display:block;box-sizing:border-box;">
       </div>
     </div>
 
