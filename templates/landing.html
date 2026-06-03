@@ -80,8 +80,8 @@
   </p>
   <div style="display:inline-block;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.35);border-radius:12px;padding:.6rem 1.25rem;text-align:center;">
     <div style="font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#fbbf24;">Pozo acumulado</div>
-    <div style="font-size:1.8rem;font-weight:900;color:#fde047;line-height:1.1;">Bs. 1,000+</div>
-    <div style="font-size:.65rem;color:rgba(255,255,255,.5);">crece con cada inscripción</div>
+    <div style="font-size:1.8rem;font-weight:900;color:#fde047;line-height:1.1;">Bs. {{ total_pozo|floatformat:0 }}</div>
+    <div style="font-size:.65rem;color:rgba(255,255,255,.5);">{{ participantes }} participante{% if participantes != 1 %}s{% endif %} inscrito{% if participantes != 1 %}s{% endif %}</div>
   </div>
 </div>
 
@@ -122,18 +122,13 @@
     <div class="card-body text-center">
       {% if torneo.qr_pago %}
       <img src="{{ torneo.qr_pago.url }}" alt="QR de pago"
-           style="max-width:260px;width:100%;border-radius:10px;margin:0 auto .75rem;display:block;">
+           style="max-width:280px;width:100%;border-radius:10px;margin:0 auto;display:block;">
       {% else %}
-      <div style="background:#f8fafc;border-radius:10px;padding:2rem;margin-bottom:.75rem;border:2px dashed #e2e8f0;">
+      <div style="background:#f8fafc;border-radius:10px;padding:2.5rem;border:2px dashed #e2e8f0;text-align:center;">
         <i class="bi bi-qr-code" style="font-size:3.5rem;color:#94a3b8;"></i>
-        <p style="font-size:.75rem;color:#94a3b8;margin:.5rem 0 0;">QR pendiente de configurar por el admin</p>
+        <p style="font-size:.75rem;color:#94a3b8;margin:.5rem 0 0;">QR pendiente de configurar<br>Django Admin → Configuración del torneo → QR de pago</p>
       </div>
       {% endif %}
-      <div style="font-size:.82rem;line-height:1.7;">
-        <div style="font-weight:800;color:#1a1d2e;">CRISTIAM MARCELO MAMANI VIDES</div>
-        <div style="color:#64748b;">Mercantil Santa Cruz · Cta. <strong style="color:#1a1d2e;">1001497274</strong></div>
-        <div style="font-size:.72rem;color:#94a3b8;">Concepto: Mi Polla 2026</div>
-      </div>
     </div>
   </div>
 

@@ -14,8 +14,21 @@ from .whatsapp import normalizar_telefono as _norm_tel
 def landing(request):
     """Public landing page — explains the polla, shows payment QR."""
     from .models import TorneoConfig
+    from decimal import Decimal
+    from django.contrib.auth.models import User
     torneo = TorneoConfig.get()
-    return render(request, 'landing.html', {'torneo': torneo})
+    # Calculate actual pool for display
+    participantes = User.objects.filter(
+        is_active=True, is_staff=False,
+        perfil__telefono__regex=r'^\d{7,15}$',
+    ).count()
+    cuota_neta = torneo.cuota * Decimal('0.85')
+    total_pozo = cuota_neta * participantes
+    return render(request, 'landing.html', {
+        'torneo': torneo,
+        'total_pozo': total_pozo,
+        'participantes': participantes,
+    })
 
 
 def custom_login(request):
