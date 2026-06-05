@@ -538,11 +538,20 @@ def admin_usuarios(request):
             return redirect('polla:admin_usuarios')
 
     from django.conf import settings as djsettings
+    from decimal import Decimal
     usuarios = User.objects.filter(is_staff=False).select_related('perfil').order_by('last_name', 'first_name')
     torneo_cfg = TorneoConfig.get()
+    # Count active participants with valid phone (for pozo)
+    inscritos = User.objects.filter(
+        is_active=True, is_staff=False,
+        perfil__telefono__regex=r'^\d{7,15}$',
+    ).count()
+    total_pozo = torneo_cfg.cuota * Decimal('0.85') * inscritos
     return render(request, 'polla/admin_usuarios.html', {
         'usuarios': usuarios,
         'cuota_actual': torneo_cfg.cuota,
+        'inscritos': inscritos,
+        'total_pozo': total_pozo,
         'wa_url':      getattr(djsettings, 'EVOLUTION_API_URL',  'http://elcarguero_evolution:8080'),
         'wa_instance': getattr(djsettings, 'EVOLUTION_INSTANCE', 'elcarguero'),
         'wa_key_ok':   bool(getattr(djsettings, 'EVOLUTION_API_KEY', '')),

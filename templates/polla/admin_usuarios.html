@@ -3,8 +3,23 @@
 
 {% block content %}
 <div class="page-header">
-  <h1 class="page-title"><i class="bi bi-people-fill me-2" style="color:var(--info);"></i>Usuarios</h1>
-  <p class="page-sub">El acceso se crea tras confirmar el pago. Las credenciales se envían por WhatsApp.</p>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+    <div>
+      <h1 class="page-title"><i class="bi bi-people-fill me-2" style="color:var(--info);"></i>Usuarios</h1>
+      <p class="page-sub">El acceso se crea tras confirmar el pago. Las credenciales se envían por WhatsApp.</p>
+    </div>
+    <!-- Inscriptos summary -->
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.4rem .85rem;text-align:center;">
+        <div style="font-size:1.3rem;font-weight:900;color:var(--green);line-height:1;">{{ inscritos }}</div>
+        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);">inscritos</div>
+      </div>
+      <div style="background:var(--card);border:1px solid rgba(255,215,0,.3);border-radius:10px;padding:.4rem .85rem;text-align:center;">
+        <div style="font-size:1.3rem;font-weight:900;color:var(--gold);line-height:1;">Bs. {{ total_pozo|floatformat:0 }}</div>
+        <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);">pozo</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="px-3 py-3">

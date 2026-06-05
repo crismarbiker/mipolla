@@ -126,10 +126,12 @@
   <a href="{% url 'polla:pronosticos' %}" class="{% if request.resolver_match.url_name == 'pronosticos' %}active{% endif %}">
     <i class="bi bi-pencil-square"></i>Pron.
   </a>
-  <!-- Gran Pozo as 4th tab (gold color) -->
+  <a href="{% url 'polla:reglas' %}" class="{% if request.resolver_match.url_name == 'reglas' %}active{% endif %}">
+    <i class="bi bi-book{% if request.resolver_match.url_name == 'reglas' %}-fill{% endif %}"></i>Reglas
+  </a>
   <a href="{% url 'polla:gran_pozo' %}" class="{% if request.resolver_match.url_name == 'gran_pozo' %}active{% endif %}"
-     style="color:#F59E0B;">
-    <i class="bi bi-trophy-fill"></i>Pozo
+     style="{% if request.resolver_match.url_name != 'gran_pozo' %}color:#F59E0B;{% endif %}">
+    <i class="bi bi-cash-stack"></i>Pozo
   </a>
 </nav>
 
