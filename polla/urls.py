@@ -12,6 +12,7 @@ urlpatterns = [
     path('reglas/', views.reglas, name='reglas'),
     path('gran-pozo/', views.gran_pozo, name='gran_pozo'),
     path('admin/usuarios/', views.admin_usuarios, name='admin_usuarios'),
+    path('admin/usuarios/<int:pk>/editar/', views.admin_editar_usuario, name='admin_editar_usuario'),
     path('admin/usuarios/<int:pk>/toggle/', views.admin_toggle_usuario, name='admin_toggle_usuario'),
     path('admin/usuarios/<int:pk>/eliminar/', views.admin_eliminar_usuario, name='admin_eliminar_usuario'),
     path('admin/usuarios/<int:pk>/reset-password/', views.admin_reset_password, name='admin_reset_password'),

@@ -174,6 +174,39 @@
       </div>
     </div>
     <div style="display:flex;gap:.3rem;flex-shrink:0;">
+      <!-- Edit name -->
+      <button class="btn btn-outline-primary btn-sm" style="font-size:.7rem;border-radius:8px;" title="Editar nombre"
+              data-bs-toggle="modal" data-bs-target="#editModal{{ u.pk }}">
+        <i class="bi bi-pencil"></i>
+      </button>
+      <!-- Edit modal -->
+      <div class="modal fade" id="editModal{{ u.pk }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:340px;">
+          <div class="modal-content" style="background:var(--card);border:1px solid var(--border);border-radius:14px;">
+            <div class="modal-header" style="border-color:var(--border);padding:.65rem 1rem;">
+              <span style="font-weight:800;font-size:.9rem;color:var(--text);">Editar nombre</span>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="font-size:.7rem;"></button>
+            </div>
+            <form method="post" action="{% url 'polla:admin_editar_usuario' u.pk %}">
+              {% csrf_token %}
+              <div class="modal-body" style="padding:.85rem 1rem;">
+                <div style="margin-bottom:.6rem;">
+                  <label style="display:block;font-size:.73rem;font-weight:700;color:var(--text2);margin-bottom:.25rem;">Nombre <span style="color:var(--red);">*</span></label>
+                  <input type="text" name="first_name" class="form-control" value="{{ u.first_name }}" required>
+                </div>
+                <div>
+                  <label style="display:block;font-size:.73rem;font-weight:700;color:var(--text2);margin-bottom:.25rem;">Apellido</label>
+                  <input type="text" name="last_name" class="form-control" value="{{ u.last_name }}">
+                </div>
+              </div>
+              <div class="modal-footer" style="border-color:var(--border);padding:.6rem 1rem;gap:.4rem;">
+                <button type="button" class="btn btn-ghost btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-gold btn-sm"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
       <!-- Reset password dropdown -->
       <div class="dropdown">
         <button class="btn btn-outline-primary btn-sm" data-bs-toggle="dropdown"

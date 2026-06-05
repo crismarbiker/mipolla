@@ -716,6 +716,24 @@ def admin_reset_password(request, pk):
 
 @login_required
 @user_passes_test(_es_admin)
+def admin_editar_usuario(request, pk):
+    if request.method != 'POST':
+        return redirect('polla:admin_usuarios')
+    user = get_object_or_404(User, pk=pk, is_staff=False)
+    first = request.POST.get('first_name', '').strip()
+    last = request.POST.get('last_name', '').strip()
+    if not first:
+        messages.error(request, 'El nombre no puede estar vacío.')
+        return redirect('polla:admin_usuarios')
+    user.first_name = first
+    user.last_name = last
+    user.save()
+    messages.success(request, f'Nombre actualizado a "{user.get_full_name()}".')
+    return redirect('polla:admin_usuarios')
+
+
+@login_required
+@user_passes_test(_es_admin)
 def admin_eliminar_usuario(request, pk):
     """Permanently delete a user — removes them from ranking and pool."""
     if request.method != 'POST':
