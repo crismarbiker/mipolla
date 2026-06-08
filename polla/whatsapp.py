@@ -58,7 +58,7 @@ def enviar_credenciales_whatsapp(
         f"🔗 {app_url}\n"
         f"📱 *Usuario:* `{username}`\n"
         f"🔑 *Clave:* `{password}`\n\n"
-        f"Si la perdés mandame la palabra *clave* y te mando una nueva 🔄\n\n"
+        f"Si olvidás tu clave, ingresá a la plataforma y usá la opción *\"Olvidé mi contraseña\"* 🔑\n\n"
         f"¡Mucha suerte y que gane el mejor! 🏆⚽"
     )
 
