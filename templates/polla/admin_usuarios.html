@@ -140,12 +140,24 @@
   </div>
 
   <!-- Participants list -->
-  <div style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:.5rem;">
-    Participantes ({{ usuarios|length }})
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;flex-wrap:wrap;">
+    <div style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">
+      Participantes (<span id="visible-count">{{ usuarios|length }}</span>)
+    </div>
+    <div style="position:relative;flex:1;min-width:160px;max-width:280px;">
+      <i class="bi bi-search" style="position:absolute;left:.55rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.8rem;pointer-events:none;"></i>
+      <input type="search" id="user-search" placeholder="Nombre o teléfono…"
+             oninput="filtrarUsuarios(this.value)"
+             style="width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;outline:none;padding:.35rem .6rem .35rem 1.75rem;font-size:.8rem;color:var(--text);">
+    </div>
+  </div>
+  <div id="no-results" style="display:none;text-align:center;padding:1.5rem;color:var(--muted);font-size:.82rem;">
+    <i class="bi bi-search" style="display:block;font-size:1.8rem;margin-bottom:.4rem;"></i>Sin resultados
   </div>
 
   {% for u in usuarios %}
-  <div class="rank-row {% if not u.is_active %}opacity-50{% endif %}">
+  <div class="rank-row {% if not u.is_active %}opacity-50{% endif %}"
+       data-search="{{ u.get_full_name|lower }} {{ u.perfil.telefono|default:u.username|lower }}">
     <span class="rank-av"
           style="background:linear-gradient(135deg,{% cycle '#1d4ed8' '#16a34a' '#d97706' '#7c3aed' '#0369a1' %},{% cycle '#16a34a' '#1d4ed8' '#7c3aed' '#d97706' '#16a34a' %});">
       {{ u.first_name|first|upper }}{{ u.last_name|first|upper }}
@@ -262,4 +274,21 @@
   {% endfor %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filtrarUsuarios(q) {
+  const term = q.toLowerCase().trim();
+  const rows = document.querySelectorAll('[data-search]');
+  let visible = 0;
+  rows.forEach(row => {
+    const match = !term || row.dataset.search.includes(term);
+    row.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  document.getElementById('visible-count').textContent = visible;
+  document.getElementById('no-results').style.display = visible === 0 ? '' : 'none';
+}
+</script>
 {% endblock %}
