@@ -205,101 +205,111 @@
 
   {% else %}
   <!-- OPEN STATE -->
-  <div class="card mb-3" style="background:rgba(13,30,53,.5) !important;border-color:rgba(124,58,237,.3) !important;">
-    <div class="card-body p-3">
-      <div class="d-flex align-items-start gap-2">
-        <span style="font-size:1.5rem;">👟</span>
-        <div class="flex-grow-1">
-          <div class="fw-bold mb-1">Elige hasta {{ max_jugadores }} jugadores</div>
-          <div class="text-muted small">Por cada gol que anoten, ganas <strong class="text-warning">+2 pts</strong>.</div>
-          {% if primer_partido %}
-          <div class="mt-2 d-flex align-items-center gap-2"
-               style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:.4rem .7rem;font-size:.75rem;">
-            <i class="bi bi-clock-fill text-warning"></i>
-            <span>Se cierra el <strong class="text-warning">{{ primer_partido|date:"d M Y · H:i" }}</strong> (inicio del torneo)</span>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Current selection chips -->
+  {% if primer_partido %}
+  <div class="d-flex align-items-center gap-2 mb-3"
+       style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:.5rem .8rem;font-size:.75rem;">
+    <i class="bi bi-clock-fill text-warning flex-shrink-0"></i>
+    <span>Se cierra el <strong class="text-warning">{{ primer_partido|date:"d M Y · H:i" }}</strong></span>
+  </div>
+  {% endif %}
+
+  <!-- Current selection -->
   {% if seleccion_actual %}
   <div class="mb-3">
-    <div class="section-title">Selección actual ({{ seleccion_actual|length }}/{{ max_jugadores }})</div>
-    <div class="d-flex flex-wrap gap-2 mb-2">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <div class="section-title mb-0">Tus jugadores ({{ seleccion_actual|length }}/{{ max_jugadores }})</div>
+      <button type="button" class="btn btn-gold btn-sm fw-bold" onclick="toggleFormJugadores()">
+        <i class="bi bi-pencil me-1"></i>Editar selección
+      </button>
+    </div>
+    <div class="d-flex flex-column gap-2">
       {% for sel in seleccion_actual %}
-      <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill"
-           style="background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);font-size:.78rem;">
-        <span>{{ sel.jugador.pais.emoji }}</span>
-        <span class="fw-semibold">{{ sel.jugador.nombre_completo }}</span>
-        {% if sel.puntos_acumulados > 0 %}
-        <span class="badge" style="background:rgba(240,192,64,.2);color:#f0c040;font-size:.6rem;">
-          +{{ sel.puntos_acumulados }}pts
-        </span>
-        {% endif %}
+      <div class="d-flex align-items-center gap-2 px-3 py-2"
+           style="background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);border-radius:10px;font-size:.82rem;">
+        <span style="font-size:1.2rem;">{{ sel.jugador.pais.emoji }}</span>
+        <span class="fw-semibold flex-grow-1">{{ sel.jugador.nombre_completo }}</span>
+        <span class="text-muted" style="font-size:.72rem;">{{ sel.jugador.pais.nombre }}</span>
       </div>
       {% endfor %}
     </div>
   </div>
   {% endif %}
 
-  <!-- Player search & selection form -->
-  <form method="post" id="form-jugadores">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="jugadores">
+  <!-- Player search & selection form — hidden by default if already has selection -->
+  <div id="form-jugadores-wrap" {% if seleccion_actual %}style="display:none;"{% endif %}>
 
-    <div class="search-wrap mb-3">
-      <i class="bi bi-search search-icon"></i>
-      <input type="text" id="player-search" class="form-control"
-             placeholder="Buscar jugador (ej: Messi, Ronaldo, Vinicius...)"
-             autocomplete="off" oninput="filterPlayers()" spellcheck="false">
-      <button type="button" class="search-clear" onclick="clearSearch()">
-        <i class="bi bi-x-lg"></i>
-      </button>
-    </div>
-
-    <div class="mb-2 d-flex justify-content-between align-items-center">
-      <span class="text-muted small">
-        <span id="selected-count">{{ ids_seleccionados|length }}</span>/{{ max_jugadores }} seleccionados
-      </span>
-      <button type="submit" class="btn btn-gold btn-sm fw-bold">
-        <i class="bi bi-save2 me-1"></i>Guardar selección
-      </button>
-    </div>
-
-    <div id="players-list" style="max-height:58vh;overflow-y:auto;">
-      {% for pais in paises_con_jugadores %}
-      {% if pais.jugadores.all %}
-      <div class="pais-group" data-pais="{{ pais.nombre|lower }}">
-        <div class="divider-text my-2" style="font-size:.65rem;">
-          {{ pais.emoji }} {{ pais.nombre }} — Grupo {{ pais.letra_grupo }}
+    {% if not seleccion_actual %}
+    <div class="card mb-3" style="background:rgba(13,30,53,.5) !important;border-color:rgba(124,58,237,.3) !important;">
+      <div class="card-body p-3 d-flex align-items-start gap-2">
+        <span style="font-size:1.4rem;">👟</span>
+        <div>
+          <div class="fw-bold mb-1">Elige hasta {{ max_jugadores }} jugadores</div>
+          <div class="text-muted small">Por cada gol que anoten, ganas <strong class="text-warning">+2 pts</strong>.</div>
         </div>
-        {% for jugador in pais.jugadores.all %}
-        {# data-search: name only (no position) + country, lowercased for JS search #}
-        {% with nombre_raw=jugador.nombre_completo %}
-        <label class="player-row mb-1"
-               data-search="{{ nombre_raw|lower }} {{ pais.nombre|lower }}">
-          <input type="checkbox" name="jugador_ids" value="{{ jugador.id }}"
-                 class="player-cb"
-                 {% if jugador.id in ids_seleccionados %}checked{% endif %}
-                 onchange="updatePlayerCount()">
-          <div class="flex-grow-1 min-w-0">
-            <div class="player-name">{{ nombre_raw }}</div>
-            <div class="player-country">{{ pais.nombre }}</div>
-          </div>
-          {% if jugador.total_goles > 0 %}
-          <span class="badge badge-success">⚽ {{ jugador.total_goles }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <form method="post" id="form-jugadores">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="jugadores">
+
+      <div class="search-wrap mb-3">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" id="player-search" class="form-control"
+               placeholder="Buscar jugador (ej: Messi, Ronaldo, Vinicius...)"
+               autocomplete="off" oninput="filterPlayers()" spellcheck="false">
+        <button type="button" class="search-clear" onclick="clearSearch()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="mb-2 d-flex justify-content-between align-items-center">
+        <span class="text-muted small">
+          <span id="selected-count">{{ ids_seleccionados|length }}</span>/{{ max_jugadores }} seleccionados
+        </span>
+        <div class="d-flex gap-2">
+          {% if seleccion_actual %}
+          <button type="button" class="btn btn-ghost btn-sm" onclick="toggleFormJugadores()">Cancelar</button>
           {% endif %}
-        </label>
-        {% endwith %}
+          <button type="submit" class="btn btn-gold btn-sm fw-bold">
+            <i class="bi bi-save2 me-1"></i>Guardar
+          </button>
+        </div>
+      </div>
+
+      <div id="players-list" style="max-height:58vh;overflow-y:auto;">
+        {% for pais in paises_con_jugadores %}
+        {% if pais.jugadores.all %}
+        <div class="pais-group" data-pais="{{ pais.nombre|lower }}">
+          <div class="divider-text my-2" style="font-size:.65rem;">
+            {{ pais.emoji }} {{ pais.nombre }} — Grupo {{ pais.letra_grupo }}
+          </div>
+          {% for jugador in pais.jugadores.all %}
+          {% with nombre_raw=jugador.nombre_completo %}
+          <label class="player-row mb-1"
+                 data-search="{{ nombre_raw|lower }} {{ pais.nombre|lower }}">
+            <input type="checkbox" name="jugador_ids" value="{{ jugador.id }}"
+                   class="player-cb"
+                   {% if jugador.id in ids_seleccionados %}checked{% endif %}
+                   onchange="updatePlayerCount()">
+            <div class="flex-grow-1 min-w-0">
+              <div class="player-name">{{ nombre_raw }}</div>
+              <div class="player-country">{{ pais.nombre }}</div>
+            </div>
+            {% if jugador.total_goles > 0 %}
+            <span class="badge badge-success">⚽ {{ jugador.total_goles }}</span>
+            {% endif %}
+          </label>
+          {% endwith %}
+          {% endfor %}
+        </div>
+        {% endif %}
         {% endfor %}
       </div>
-      {% endif %}
-      {% endfor %}
-    </div>
-  </form>
+    </form>
+  </div>
   {% endif %}
 
 </div>
@@ -366,6 +376,14 @@
 
 {% block extra_js %}
 <script>
+// ── Toggle player selection form ──────────────────
+function toggleFormJugadores() {
+  const wrap = document.getElementById('form-jugadores-wrap');
+  const visible = wrap.style.display !== 'none';
+  wrap.style.display = visible ? 'none' : '';
+  if (!visible) wrap.querySelector('#player-search').focus();
+}
+
 // ── Tab switching ─────────────────────────────────
 function showTab(id, btn) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('d-none'));
