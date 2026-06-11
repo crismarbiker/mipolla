@@ -302,6 +302,41 @@
   </div>
   {% endfor %}
 
+  <!-- Lista de teléfonos -->
+  <div style="margin-top:1.25rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;flex-wrap:wrap;">
+      <div style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">
+        <i class="bi bi-telephone-fill me-1"></i>Lista de teléfonos
+      </div>
+      <button onclick="copiarTelefonos()" class="btn btn-ghost btn-sm" style="font-size:.72rem;">
+        <i class="bi bi-clipboard me-1"></i>Copiar lista
+      </button>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+      <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="padding:.45rem .75rem;font-weight:700;color:var(--muted);font-size:.65rem;text-transform:uppercase;letter-spacing:.6px;text-align:left;">Nombre</th>
+            <th style="padding:.45rem .75rem;font-weight:700;color:var(--muted);font-size:.65rem;text-transform:uppercase;letter-spacing:.6px;text-align:left;">Teléfono</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-telefonos">
+          {% for u in usuarios %}
+          <tr style="border-bottom:1px solid var(--border);" class="{% if not u.is_active %}opacity-50{% endif %}">
+            <td style="padding:.45rem .75rem;color:var(--text);font-weight:600;">{{ u.get_full_name|default:u.username }}</td>
+            <td style="padding:.45rem .75rem;color:var(--muted);font-family:monospace;">
+              {% if u.perfil.telefono %}+{{ u.perfil.telefono }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div id="copy-feedback" style="display:none;font-size:.72rem;color:var(--green);margin-top:.35rem;text-align:right;">
+      ✓ Lista copiada al portapapeles
+    </div>
+  </div>
+
 </div>
 {% endblock %}
 
@@ -318,6 +353,24 @@ function filtrarUsuarios(q) {
   });
   document.getElementById('visible-count').textContent = visible;
   document.getElementById('no-results').style.display = visible === 0 ? '' : 'none';
+}
+
+function copiarTelefonos() {
+  const rows = document.querySelectorAll('#tabla-telefonos tr');
+  const lines = [];
+  rows.forEach(tr => {
+    const celdas = tr.querySelectorAll('td');
+    if (celdas.length >= 2) {
+      const nombre = celdas[0].textContent.trim();
+      const tel = celdas[1].textContent.trim();
+      if (tel !== '—') lines.push(nombre + '\t' + tel);
+    }
+  });
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const fb = document.getElementById('copy-feedback');
+    fb.style.display = 'block';
+    setTimeout(() => { fb.style.display = 'none'; }, 2500);
+  });
 }
 </script>
 {% endblock %}
