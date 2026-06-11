@@ -492,6 +492,15 @@ def admin_usuarios(request):
     from .models import PerfilUsuario, TorneoConfig
     from decimal import Decimal, InvalidOperation
 
+    # Handle inscripciones toggle
+    if request.method == 'POST' and request.POST.get('action') == 'toggle_inscripciones':
+        torneo = TorneoConfig.get()
+        torneo.inscripciones_abiertas = not torneo.inscripciones_abiertas
+        torneo.save()
+        estado = 'abiertas' if torneo.inscripciones_abiertas else 'cerradas'
+        messages.success(request, f'Inscripciones {estado}.')
+        return redirect('polla:admin_usuarios')
+
     # Handle cuota update
     if request.method == 'POST' and request.POST.get('action') == 'update_cuota':
         nueva_cuota = request.POST.get('cuota', '').strip().replace(',', '.')
@@ -570,6 +579,7 @@ def admin_usuarios(request):
         'cuota_actual': torneo_cfg.cuota,
         'inscritos': inscritos,
         'total_pozo': total_pozo,
+        'inscripciones_abiertas': torneo_cfg.inscripciones_abiertas,
         'wa_url':      getattr(djsettings, 'EVOLUTION_API_URL',  'http://elcarguero_evolution:8080'),
         'wa_instance': getattr(djsettings, 'EVOLUTION_INSTANCE', 'elcarguero'),
         'wa_key_ok':   bool(getattr(djsettings, 'EVOLUTION_API_KEY', '')),

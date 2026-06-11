@@ -164,6 +164,8 @@ class TorneoConfig(models.Model):
                                 help_text='QR de pago (PNG/JPG) para la landing page')
     whatsapp_pago = models.CharField(max_length=20, default='59170512621',
                                      help_text='Número WhatsApp para enviar comprobante de pago')
+    inscripciones_abiertas = models.BooleanField(default=True,
+                                                  help_text='Si está desactivado, oculta el QR y la sección de pago en el landing')
 
     class Meta:
         verbose_name = 'Configuración del torneo'

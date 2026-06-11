@@ -46,6 +46,35 @@
     </div>
   </div>
 
+  <!-- Switch inscripciones -->
+  <div style="background:var(--card);border:1px solid {% if inscripciones_abiertas %}rgba(34,197,94,.35){% else %}rgba(239,68,68,.35){% endif %};border-radius:14px;padding:.875rem 1rem;margin-bottom:.75rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:{% if inscripciones_abiertas %}var(--green){% else %}var(--red,#ef4444){% endif %};">
+          <i class="bi bi-{% if inscripciones_abiertas %}unlock-fill{% else %}lock-fill{% endif %} me-1"></i>Inscripciones
+        </div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.15rem;">
+          {% if inscripciones_abiertas %}
+            Abiertas — el QR de pago es visible en el landing
+          {% else %}
+            Cerradas — el QR de pago está oculto en el landing
+          {% endif %}
+        </div>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="toggle_inscripciones">
+        <button type="submit"
+                style="display:flex;align-items:center;gap:.5rem;background:{% if inscripciones_abiertas %}rgba(34,197,94,.15){% else %}rgba(239,68,68,.12){% endif %};border:1px solid {% if inscripciones_abiertas %}rgba(34,197,94,.4){% else %}rgba(239,68,68,.4){% endif %};border-radius:999px;padding:.35rem .9rem;cursor:pointer;font-size:.78rem;font-weight:700;color:{% if inscripciones_abiertas %}var(--green){% else %}var(--red,#ef4444){% endif %};">
+          <span style="width:32px;height:18px;border-radius:999px;background:{% if inscripciones_abiertas %}#22c55e{% else %}#ef4444{% endif %};position:relative;transition:background .2s;flex-shrink:0;">
+            <span style="position:absolute;top:2px;{% if inscripciones_abiertas %}right:2px{% else %}left:2px{% endif %};width:14px;height:14px;border-radius:50%;background:#fff;"></span>
+          </span>
+          {% if inscripciones_abiertas %}Cerrar inscripciones{% else %}Abrir inscripciones{% endif %}
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- WhatsApp status -->
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:.875rem 1rem;margin-bottom:.75rem;font-size:.78rem;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:.5rem;">

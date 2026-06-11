@@ -88,6 +88,7 @@
 <!-- Content on light background -->
 <div class="content-wrap">
 
+  {% if torneo.inscripciones_abiertas %}
   <!-- How to participate -->
   <div class="section-label">Cómo participar</div>
 
@@ -141,6 +142,14 @@
     </a>
     <div style="font-size:.7rem;color:#94a3b8;margin-top:.35rem;">+591 {{ torneo.whatsapp_pago|slice:"3:" }}</div>
   </div>
+  {% else %}
+  <!-- Inscripciones cerradas -->
+  <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:1.2rem 1rem;margin-bottom:1rem;text-align:center;">
+    <div style="font-size:1.8rem;margin-bottom:.4rem;">🔒</div>
+    <div style="font-weight:800;font-size:.95rem;color:#991b1b;">Inscripciones cerradas</div>
+    <div style="font-size:.78rem;color:#b91c1c;margin-top:.3rem;">El período de inscripción ya finalizó.</div>
+  </div>
+  {% endif %}
 
   <!-- Scoring rules -->
   <div class="section-label">Tabla de puntos</div>
