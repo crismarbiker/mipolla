@@ -131,7 +131,7 @@
 
 {% block extra_js %}
 <script>
-const pronosticosUrl = "{% url 'polla:partido_pronosticos' 0 %}".replace('/0/', '/');
+const pronosticosUrlTpl = "{% url 'polla:partido_pronosticos' 0 %}";
 
 function filterFase(fase, btn) {
   document.querySelectorAll('.pill-tab').forEach(b => b.classList.remove('active'));
@@ -142,11 +142,12 @@ function filterFase(fase, btn) {
 }
 
 function verPronosticos(partidoId) {
+  const url = pronosticosUrlTpl.replace('/0/', '/' + partidoId + '/');
   const body = document.getElementById('modalPronosticosBody');
   body.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm text-warning" role="status"></div></div>';
   const modal = new bootstrap.Modal(document.getElementById('modalPronosticos'));
   modal.show();
-  fetch(pronosticosUrl + partidoId + '/pronosticos/', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+  fetch(url, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
     .then(r => r.text())
     .then(html => { body.innerHTML = html; })
     .catch(() => { body.innerHTML = '<div class="text-center py-3 text-danger">Error al cargar.</div>'; });
