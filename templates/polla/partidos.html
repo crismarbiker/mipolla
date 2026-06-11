@@ -24,7 +24,8 @@
     <div class="divider-text my-3">{{ fase.descripcion }}</div>
 
     {% for partido in fase.partidos.all %}
-    <div class="match-card mb-2 {% if fase.id_fase == 1 %}fase-grupos{% elif fase.id_fase == 2 %}fase-r32{% elif fase.id_fase == 3 %}fase-r16{% elif fase.id_fase == 4 %}fase-qf{% elif fase.id_fase == 5 or fase.id_fase == 6 %}fase-sf{% elif fase.id_fase == 7 %}fase-final{% endif %}">
+    <div class="match-card mb-2 {% if fase.id_fase == 1 %}fase-grupos{% elif fase.id_fase == 2 %}fase-r32{% elif fase.id_fase == 3 %}fase-r16{% elif fase.id_fase == 4 %}fase-qf{% elif fase.id_fase == 5 or fase.id_fase == 6 %}fase-sf{% elif fase.id_fase == 7 %}fase-final{% endif %}"
+         style="cursor:pointer;" onclick="verPronosticos({{ partido.id }})">
 
       <!-- Header -->
       <div class="d-flex align-items-center justify-content-between mb-2">
@@ -95,7 +96,7 @@
       {% elif partido.abierto %}
       <div class="mt-2 pt-2 d-flex align-items-center justify-content-between" style="border-top:1px solid var(--c-border);">
         <span style="font-size:.75rem;color:var(--c-muted);">Sin pronóstico</span>
-        <a href="{% url 'polla:pronosticos' %}" class="btn btn-outline-gold btn-sm py-0" style="font-size:.7rem;">
+        <a href="{% url 'polla:pronosticos' %}" class="btn btn-outline-gold btn-sm py-0" style="font-size:.7rem;" onclick="event.stopPropagation()">
           <i class="bi bi-pencil me-1"></i>Pronosticar
         </a>
       </div>
@@ -109,14 +110,46 @@
 </div>
 {% endblock %}
 
+<!-- Modal pronósticos del partido -->
+<div class="modal fade" id="modalPronosticos" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+    <div class="modal-content" style="background:var(--surface,#0e1222);border:1px solid var(--border,#252840);border-radius:14px;">
+      <div class="modal-header" style="border-bottom:1px solid var(--border,#252840);padding:.75rem 1rem;">
+        <h6 class="modal-title fw-bold mb-0">
+          <i class="bi bi-people-fill me-2 text-warning"></i>Pronósticos del partido
+        </h6>
+        <button type="button" class="btn-close btn-close-white btn-sm" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalPronosticosBody" style="min-height:8rem;padding:1rem;">
+        <div class="text-center py-4" style="color:var(--c-muted);">
+          <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% block extra_js %}
 <script>
+const pronosticosUrl = "{% url 'polla:partido_pronosticos' 0 %}".replace('/0/', '/');
+
 function filterFase(fase, btn) {
   document.querySelectorAll('.pill-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.querySelectorAll('.fase-section').forEach(s => {
     s.style.display = (fase === 'all' || s.dataset.fase === fase) ? '' : 'none';
   });
+}
+
+function verPronosticos(partidoId) {
+  const body = document.getElementById('modalPronosticosBody');
+  body.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm text-warning" role="status"></div></div>';
+  const modal = new bootstrap.Modal(document.getElementById('modalPronosticos'));
+  modal.show();
+  fetch(pronosticosUrl + partidoId + '/pronosticos/', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+    .then(r => r.text())
+    .then(html => { body.innerHTML = html; })
+    .catch(() => { body.innerHTML = '<div class="text-center py-3 text-danger">Error al cargar.</div>'; });
 }
 </script>
 {% endblock %}

@@ -6,6 +6,7 @@ app_name = 'polla'
 urlpatterns = [
     path('', views.home, name='home'),
     path('partidos/', views.partidos, name='partidos'),
+    path('partidos/<int:pk>/pronosticos/', views.partido_pronosticos, name='partido_pronosticos'),
     path('pronosticos/', views.pronosticos, name='pronosticos'),
     path('ranking/', views.ranking, name='ranking'),
     path('ranking/<str:username>/', views.pronosticos_usuario, name='pronosticos_usuario'),

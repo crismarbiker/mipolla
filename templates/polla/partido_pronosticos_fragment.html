@@ -1,0 +1,56 @@
+{% load polla_extras %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex align-items-center gap-2 flex-wrap">
+    <span style="font-size:1.4rem;">{{ partido.pais_local.emoji }}</span>
+    <span class="fw-bold" style="font-size:.95rem;">{{ partido.pais_local.nombre }}</span>
+    <span class="text-muted mx-1" style="font-size:.8rem;">vs</span>
+    <span class="fw-bold" style="font-size:.95rem;">{{ partido.pais_visitante.nombre }}</span>
+    <span style="font-size:1.4rem;">{{ partido.pais_visitante.emoji }}</span>
+  </div>
+  {% if partido.jugado %}
+  <span class="fw-bold ms-2" style="font-size:1.1rem;color:var(--accent,#f59e0b);white-space:nowrap;">
+    {{ partido.goles_local }} - {{ partido.goles_visitante }}
+  </span>
+  {% endif %}
+</div>
+
+{% if partido.fecha %}
+<div class="text-muted mb-3" style="font-size:.72rem;">
+  <i class="bi bi-calendar3 me-1"></i>{{ partido.fecha|date:"d M Y · H:i" }}
+  {% if partido.estadio %}<i class="bi bi-geo-alt ms-2 me-1"></i>{{ partido.estadio.nombre }}{% endif %}
+</div>
+{% endif %}
+
+{% if not pronosticos %}
+<div class="text-center py-4" style="color:var(--c-muted);">
+  <div style="font-size:2rem;margin-bottom:.5rem;">📭</div>
+  <div style="font-size:.85rem;">Nadie pronosticó este partido todavía.</div>
+</div>
+
+{% else %}
+<div style="font-size:.72rem;color:var(--c-muted);margin-bottom:.6rem;">
+  {{ pronosticos|length }} pronóstico{{ pronosticos|length|pluralize }}
+</div>
+
+<div style="display:flex;flex-direction:column;gap:.4rem;">
+  {% for p in pronosticos %}
+  <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.5rem;
+              background:rgba(255,255,255,.04);border:1px solid var(--border,#252840);
+              border-radius:8px;padding:.45rem .75rem;">
+    <span style="font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+      {{ p.usuario.get_full_name|default:p.usuario.username }}
+    </span>
+    <span style="font-size:.9rem;font-weight:800;color:var(--accent,#f59e0b);white-space:nowrap;">
+      {{ p.goles_local }} - {{ p.goles_visitante }}{% if p.predice_penales %} <span style="font-size:.6rem;color:#60a5fa;">Pen.</span>{% endif %}
+    </span>
+    {% if partido.jugado %}
+    <span class="badge pts-{{ p.puntos }}" style="min-width:2.8rem;text-align:center;">
+      {% if p.puntos > 0 %}+{% endif %}{{ p.puntos }} pts
+    </span>
+    {% else %}
+    <span style="width:2.8rem;"></span>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

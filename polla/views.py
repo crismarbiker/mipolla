@@ -312,6 +312,24 @@ def partidos(request):
 
 
 @login_required
+def partido_pronosticos(request, pk):
+    partido = get_object_or_404(
+        Partido.objects.select_related('pais_local', 'pais_visitante', 'estadio'),
+        pk=pk,
+    )
+    pronosticos_qs = (
+        Pronostico.objects
+        .filter(partido=partido)
+        .select_related('usuario')
+        .order_by('-puntos', 'usuario__first_name')
+    )
+    return render(request, 'polla/partido_pronosticos_fragment.html', {
+        'partido': partido,
+        'pronosticos': pronosticos_qs,
+    })
+
+
+@login_required
 def pronosticos(request):
     perfil, _ = PerfilUsuario.objects.get_or_create(usuario=request.user)
     seleccion_actual = list(request.user.jugadores_seleccionados.select_related('jugador__pais'))
