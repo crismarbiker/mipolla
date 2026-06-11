@@ -223,13 +223,18 @@
         <i class="bi bi-pencil me-1"></i>Editar selección
       </button>
     </div>
-    <div class="d-flex flex-column gap-2">
+    <div class="d-flex flex-column gap-2" id="chips-seleccion">
       {% for sel in seleccion_actual %}
       <div class="d-flex align-items-center gap-2 px-3 py-2"
+           id="chip-{{ sel.jugador.id }}"
            style="background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);border-radius:10px;font-size:.82rem;">
         <span style="font-size:1.2rem;">{{ sel.jugador.pais.emoji }}</span>
         <span class="fw-semibold flex-grow-1">{{ sel.jugador.nombre_completo }}</span>
-        <span class="text-muted" style="font-size:.72rem;">{{ sel.jugador.pais.nombre }}</span>
+        <span class="text-muted me-1" style="font-size:.72rem;">{{ sel.jugador.pais.nombre }}</span>
+        <button type="button"
+                onclick="quitarJugador({{ sel.jugador.id }})"
+                style="background:none;border:none;color:rgba(255,255,255,.4);font-size:.9rem;line-height:1;padding:2px 4px;cursor:pointer;"
+                title="Quitar jugador">✕</button>
       </div>
       {% endfor %}
     </div>
@@ -382,6 +387,24 @@ function toggleFormJugadores() {
   const visible = wrap.style.display !== 'none';
   wrap.style.display = visible ? 'none' : '';
   if (!visible) wrap.querySelector('#player-search').focus();
+}
+
+// ── Remove player via chip ✕ button ───────────────
+function quitarJugador(id) {
+  // Uncheck the checkbox in the hidden form
+  const cb = document.querySelector('.player-cb[value="' + id + '"]');
+  if (cb) { cb.checked = false; }
+  // Remove the chip visually
+  const chip = document.getElementById('chip-' + id);
+  if (chip) chip.remove();
+  // Update counter and re-enable boxes
+  updatePlayerCount();
+  // Show the form so user can pick a replacement
+  document.getElementById('form-jugadores-wrap').style.display = '';
+  // Update the header counter badge
+  const total = document.querySelectorAll('#chips-seleccion [id^="chip-"]').length;
+  const badge = document.querySelector('#tab-jugadores .section-title');
+  if (badge) badge.textContent = 'Tus jugadores (' + total + '/{{ max_jugadores }})';
 }
 
 // ── Tab switching ─────────────────────────────────
