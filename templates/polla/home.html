@@ -159,7 +159,7 @@
       </span>
       <div class="rank-info">
         <div class="rank-name">{{ d.usuario.get_full_name|default:d.usuario.username }}</div>
-        <div class="rank-sub">{{ d.exactos }} exactos · {{ d.acertados }} acertados</div>
+        <div class="rank-sub">🎯 {{ d.marcadores }} marcador{{ d.marcadores|pluralize:"es" }} · ✓ {{ d.resultados }} resultado{{ d.resultados|pluralize:"s" }}</div>
       </div>
       <span class="rank-pts">{{ d.puntos }}</span>
     </div>

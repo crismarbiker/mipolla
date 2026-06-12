@@ -448,22 +448,20 @@ def _calcular_ranking():
 
         qs = u.pronosticos.filter(partido__jugado=True)
         puntos_base = qs.aggregate(t=Sum('puntos'))['t'] or 0
-        exactos = qs.filter(puntos__gte=3).count()
-        acertados = qs.filter(puntos=2).count()
-        jugados = qs.count()
+        marcadores = qs.filter(puntos__gte=5).count()
+        resultados = qs.filter(puntos=3).count()
         pts_jugadores = u.jugadores_seleccionados.aggregate(t=Sum('puntos_acumulados'))['t'] or 0
 
         datos.append({
             'usuario': u,
             'puntos': puntos_base + perfil.puntos_campeon + pts_jugadores,
-            'exactos': exactos,
-            'acertados': acertados,
-            'jugados': jugados,
+            'marcadores': marcadores,
+            'resultados': resultados,
             'campeon': perfil.campeon,
             'pts_jugadores': pts_jugadores,
         })
 
-    datos.sort(key=lambda x: (-x['puntos'], -x['exactos'], -x['acertados']))
+    datos.sort(key=lambda x: (-x['puntos'], -x['marcadores'], -x['resultados']))
     return datos
 
 

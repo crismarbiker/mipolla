@@ -79,8 +79,7 @@
             </span>
           </div>
           <div style="font-size:.65rem;color:#9aa3ae;margin-left:2.2rem;margin-top:.1rem;">
-            🎯 {{ d.exactos }} exactos · ✓ {{ d.acertados }} ganadores · {{ d.jugados }} jugados
-            {% if d.pts_jugadores > 0 %} · 👟 +{{ d.pts_jugadores }} pts{% endif %}
+            🎯 {{ d.marcadores }} marcador{{ d.marcadores|pluralize:"es" }} · ✓ {{ d.resultados }} resultado{{ d.resultados|pluralize:"s" }}{% if d.pts_jugadores > 0 %} · 👟 +{{ d.pts_jugadores }} pts{% endif %}
           </div>
         </td>
         <td class="pts">{{ d.puntos }} <span style="font-size:.65rem;font-weight:600;color:#9aa3ae;">pts</span></td>
