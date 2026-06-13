@@ -39,8 +39,7 @@
 
   {% for partido in partidos_ordenados %}
   {% with pdata=partidos_con_jugadores|get_item:partido.id %}
-  <div class="result-card mb-3 {% if partido.jugado %}done{% else %}pending{% endif %}"
-       {% if partido.jugado %}style="opacity:.7;"{% endif %}>
+  <div class="result-card mb-3 {% if partido.jugado %}done{% else %}pending{% endif %}">
 
     <!-- Header -->
     <div class="d-flex align-items-center justify-content-between mb-2">
@@ -180,9 +179,9 @@
     </form>
 
     {% else %}
-    <!-- PLAYED: show registered goalscorers -->
-    {% if partido.goles.all %}
+    <!-- PLAYED: show registered goalscorers + correction button -->
     <div style="border-top:1px solid var(--border);padding-top:.5rem;margin-top:.25rem;">
+      {% if partido.goles.all %}
       <div style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:.3rem;">Goleadores</div>
       {% for gol in partido.goles.all %}
       <div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;margin-bottom:.2rem;">
@@ -195,8 +194,103 @@
         {% endif %}
       </div>
       {% endfor %}
+      {% endif %}
+
+      <!-- Correction button -->
+      <button type="button" onclick="toggleCorreccion({{ partido.id }})"
+              style="margin-top:.6rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:.3rem .75rem;font-size:.72rem;font-weight:700;color:var(--gold);cursor:pointer;width:100%;">
+        <i class="bi bi-pencil-fill me-1"></i>Corregir resultado
+      </button>
     </div>
-    {% endif %}
+
+    <!-- CORRECTION FORM (hidden by default) -->
+    <div id="correccion_{{ partido.id }}" style="display:none;margin-top:.75rem;border-top:1px solid rgba(245,158,11,.3);padding-top:.75rem;">
+      <div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--gold);margin-bottom:.5rem;">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>Corrección de resultado — se recalculan todos los puntos
+      </div>
+      <form method="post" id="form_{{ partido.id }}">
+        {% csrf_token %}
+        <input type="hidden" name="partido_id" value="{{ partido.id }}">
+
+        <!-- Player goals -->
+        <div style="background:var(--surface);border-radius:10px;padding:.6rem;margin-bottom:.75rem;">
+          <div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:.4rem;">
+            <i class="bi bi-person-badge me-1 text-gold"></i>Goles por jugador
+            <span style="color:var(--muted);font-weight:400;text-transform:none;"> — positivo=gol · <strong>-1</strong>=autogol</span>
+          </div>
+          <input type="text" class="form-control mb-2" placeholder="Buscar jugador..."
+                 style="font-size:.78rem;border-radius:8px;"
+                 oninput="filterGoalPlayers(this,'pl_c_{{ partido.id }}')">
+          <div id="pl_c_{{ partido.id }}" style="max-height:52vh;overflow-y:auto;">
+            <div style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:.25rem .3rem .1rem;">
+              {{ partido.pais_local.emoji }} {{ partido.pais_local.nombre }}
+            </div>
+            {% for jugador in pdata.jugadores %}{% if jugador.pais_id == partido.pais_local_id %}
+            <div class="player-goal-row" data-nombre="{{ jugador.nombre_completo|lower }}" data-pid="c_{{ partido.id }}">
+              <span style="flex:1;font-size:.78rem;color:var(--text);">{{ jugador.nombre_completo }}</span>
+              <input type="number" name="goles_jugador_{{ jugador.id }}"
+                     min="-1" max="10" placeholder="—"
+                     value="{{ pdata.goles|get_item:jugador.id|default:'' }}"
+                     class="goal-input" data-partido="c_{{ partido.id }}" data-team="local"
+                     style="width:54px;height:36px;"
+                     oninput="recalcScore('c_{{ partido.id }}')">
+            </div>
+            {% endif %}{% endfor %}
+            <div style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);padding:.4rem .3rem .1rem;">
+              {{ partido.pais_visitante.emoji }} {{ partido.pais_visitante.nombre }}
+            </div>
+            {% for jugador in pdata.jugadores %}{% if jugador.pais_id == partido.pais_visitante_id %}
+            <div class="player-goal-row" data-nombre="{{ jugador.nombre_completo|lower }}" data-pid="c_{{ partido.id }}">
+              <span style="flex:1;font-size:.78rem;color:var(--text);">{{ jugador.nombre_completo }}</span>
+              <input type="number" name="goles_jugador_{{ jugador.id }}"
+                     min="-1" max="10" placeholder="—"
+                     value="{{ pdata.goles|get_item:jugador.id|default:'' }}"
+                     class="goal-input" data-partido="c_{{ partido.id }}" data-team="visitante"
+                     style="width:54px;height:36px;"
+                     oninput="recalcScore('c_{{ partido.id }}')">
+            </div>
+            {% endif %}{% endfor %}
+          </div>
+        </div>
+
+        <!-- Penalties -->
+        {% if partido.es_eliminatoria %}
+        <div class="mb-3 p-2 rounded-3" style="background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.2);">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="hubo_penales"
+                   id="pen_c_{{ partido.id }}" {% if partido.hubo_penales %}checked{% endif %}
+                   onchange="togglePen('c_{{ partido.id }}')">
+            <label class="form-check-label" for="pen_c_{{ partido.id }}" style="font-size:.8rem;font-weight:700;">
+              <i class="bi bi-bullseye me-1 text-info"></i>Fue a penales
+            </label>
+          </div>
+          <div id="pen_inp_c_{{ partido.id }}" style="{% if not partido.hubo_penales %}display:none;{% endif %}gap:.5rem;" class="d-flex align-items-center">
+            <div class="text-center" style="flex:1;">
+              <div style="font-size:.65rem;color:var(--muted);">{{ partido.pais_local.nombre|truncatechars:10 }}</div>
+              <input type="number" name="penales_local" min="0" max="30" placeholder="0"
+                     value="{{ partido.penales_local|default:'' }}" class="score-input" style="width:52px;height:48px;">
+            </div>
+            <span class="score-sep">-</span>
+            <div class="text-center" style="flex:1;">
+              <div style="font-size:.65rem;color:var(--muted);">{{ partido.pais_visitante.nombre|truncatechars:10 }}</div>
+              <input type="number" name="penales_visitante" min="0" max="30" placeholder="0"
+                     value="{{ partido.penales_visitante|default:'' }}" class="score-input" style="width:52px;height:48px;">
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="d-flex gap-2">
+          <button type="button" onclick="toggleCorreccion({{ partido.id }})"
+                  class="btn btn-ghost btn-sm">Cancelar</button>
+          <button type="submit" class="btn btn-gold flex-grow-1 fw-bold"
+                  onclick="return confirm('¿Confirmar corrección? Se recalcularán todos los puntos de este partido.')">
+            <i class="bi bi-check-lg me-1"></i>Guardar corrección
+            (<span id="btn_sc_c_{{ partido.id }}">{{ partido.goles_local }}-{{ partido.goles_visitante }}</span>)
+          </button>
+        </div>
+      </form>
+    </div>
     {% endif %}
 
   </div>
@@ -208,6 +302,11 @@
 
 {% block extra_js %}
 <script>
+function toggleCorreccion(id) {
+  const el = document.getElementById('correccion_' + id);
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+
 function recalcScore(pid) {
   let l = 0, v = 0;
   document.querySelectorAll(`.goal-input[data-partido="${pid}"]`).forEach(inp => {
@@ -218,9 +317,12 @@ function recalcScore(pid) {
     if (team === 'local') { val > 0 ? l += val : v += Math.abs(val); }
     else { val > 0 ? v += val : l += Math.abs(val); }
   });
-  document.getElementById(`score_l_${pid}`).textContent = l;
-  document.getElementById(`score_v_${pid}`).textContent = v;
-  document.getElementById(`btn_sc_${pid}`).textContent = `${l}-${v}`;
+  const sl = document.getElementById(`score_l_${pid}`);
+  const sv = document.getElementById(`score_v_${pid}`);
+  const sb = document.getElementById(`btn_sc_${pid}`);
+  if (sl) sl.textContent = l;
+  if (sv) sv.textContent = v;
+  if (sb) sb.textContent = `${l}-${v}`;
 }
 
 function togglePen(id) {
