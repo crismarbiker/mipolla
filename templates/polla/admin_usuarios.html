@@ -186,7 +186,7 @@
 
   {% for u in usuarios %}
   <div class="rank-row {% if not u.is_active %}opacity-50{% endif %}"
-       data-search="{{ u.get_full_name|lower }} {{ u.perfil.telefono|default:u.username|lower }}">
+       data-search="{{ u.get_full_name|lower }} {{ u.perfil.telefono|default:u.username|lower }} {{ u.email|lower }}">
     <span class="rank-av"
           style="background:linear-gradient(135deg,{% cycle '#1d4ed8' '#16a34a' '#d97706' '#7c3aed' '#0369a1' %},{% cycle '#16a34a' '#1d4ed8' '#7c3aed' '#d97706' '#16a34a' %});">
       {{ u.first_name|first|upper }}{{ u.last_name|first|upper }}
@@ -198,6 +198,9 @@
         <i class="bi bi-whatsapp" style="color:#25D366;"></i> {{ u.perfil.telefono }}
         {% else %}
         @{{ u.username }}
+        {% endif %}
+        {% if u.email %}
+        <span style="margin-left:.4rem;"><i class="bi bi-envelope-fill" style="color:#60a5fa;"></i> {{ u.email }}</span>
         {% endif %}
       </div>
       <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.25rem;">
@@ -212,6 +215,11 @@
         <span style="background:rgba(168,85,247,.12);color:#c084fc;border-radius:999px;padding:.1rem .45rem;font-size:.6rem;font-weight:700;">
           {{ u.jugadores_seleccionados.count }}/5 jugadores
         </span>
+        {% if u.perfil.recibir_correos and u.email %}
+        <span style="background:rgba(96,165,250,.15);color:#60a5fa;border-radius:999px;padding:.1rem .45rem;font-size:.6rem;font-weight:700;">
+          <i class="bi bi-envelope-check-fill me-1"></i>Correo activado
+        </span>
+        {% endif %}
       </div>
     </div>
     <div style="display:flex;gap:.3rem;flex-shrink:0;">
@@ -337,6 +345,49 @@
     </div>
   </div>
 
+  <!-- Lista de correos con opt-in de transparencia -->
+  <div style="margin-top:1.25rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;flex-wrap:wrap;">
+      <div style="font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);">
+        <i class="bi bi-envelope-fill me-1"></i>Correos de transparencia (opt-in)
+      </div>
+      <button onclick="copiarCorreos()" class="btn btn-ghost btn-sm" style="font-size:.72rem;">
+        <i class="bi bi-clipboard me-1"></i>Copiar lista
+      </button>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+      <table style="width:100%;border-collapse:collapse;font-size:.8rem;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="padding:.45rem .75rem;font-weight:700;color:var(--muted);font-size:.65rem;text-transform:uppercase;letter-spacing:.6px;text-align:left;">Nombre</th>
+            <th style="padding:.45rem .75rem;font-weight:700;color:var(--muted);font-size:.65rem;text-transform:uppercase;letter-spacing:.6px;text-align:left;">Correo</th>
+            <th style="padding:.45rem .75rem;font-weight:700;color:var(--muted);font-size:.65rem;text-transform:uppercase;letter-spacing:.6px;text-align:center;">Activado</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-correos">
+          {% for u in usuarios %}
+          <tr style="border-bottom:1px solid var(--border);" class="{% if not u.is_active %}opacity-50{% endif %}">
+            <td style="padding:.45rem .75rem;color:var(--text);font-weight:600;">{{ u.get_full_name|default:u.username }}</td>
+            <td style="padding:.45rem .75rem;color:var(--muted);font-family:monospace;">
+              {{ u.email|default:"—" }}
+            </td>
+            <td style="padding:.45rem .75rem;text-align:center;">
+              {% if u.perfil.recibir_correos and u.email %}
+              <span class="badge b-green" style="font-size:.6rem;">✓ Sí</span>
+              {% else %}
+              <span class="badge b-gray" style="font-size:.6rem;">No</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div id="copy-feedback-correos" style="display:none;font-size:.72rem;color:var(--green);margin-top:.35rem;text-align:right;">
+      ✓ Lista copiada al portapapeles
+    </div>
+  </div>
+
 </div>
 {% endblock %}
 
@@ -368,6 +419,25 @@ function copiarTelefonos() {
   });
   navigator.clipboard.writeText(lines.join('\n')).then(() => {
     const fb = document.getElementById('copy-feedback');
+    fb.style.display = 'block';
+    setTimeout(() => { fb.style.display = 'none'; }, 2500);
+  });
+}
+
+function copiarCorreos() {
+  const rows = document.querySelectorAll('#tabla-correos tr');
+  const lines = [];
+  rows.forEach(tr => {
+    const celdas = tr.querySelectorAll('td');
+    if (celdas.length >= 3) {
+      const nombre = celdas[0].textContent.trim();
+      const correo = celdas[1].textContent.trim();
+      const activado = celdas[2].textContent.trim().includes('Sí');
+      if (correo !== '—' && activado) lines.push(nombre + '\t' + correo);
+    }
+  });
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const fb = document.getElementById('copy-feedback-correos');
     fb.style.display = 'block';
     setTimeout(() => { fb.style.display = 'none'; }, 2500);
   });
