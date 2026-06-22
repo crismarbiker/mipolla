@@ -43,6 +43,14 @@
 
 <div class="px-3 py-3">
 
+<!-- Buscador de concursantes -->
+<div class="mb-3">
+  <input type="text" id="buscarConcursante" class="form-control" placeholder="🔎 Buscar concursante..."
+         style="border-radius:10px;"
+         oninput="buscarEnRanking()" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarEnRanking(true);}">
+  <div id="buscarConcursanteInfo" style="font-size:.72rem;color:#9aa3ae;margin-top:.25rem;min-height:1rem;"></div>
+</div>
+
 <!-- ── TABLA RANKING ── -->
 <div class="section-bar">Resumen Principal</div>
 <div class="rank-table-wrap mb-4">
@@ -58,6 +66,7 @@
     <tbody>
       {% for d in datos %}
       <tr class="{% if d.usuario == request.user %}is-me{% endif %}"
+          data-nombre="{{ d.usuario.get_full_name|default:d.usuario.username|lower }}"
           onclick="window.location='{% url 'polla:pronosticos_usuario' d.usuario.username %}'">
         <td class="center">
           {% if forloop.counter == 1 %}<span style="font-size:1.1rem;">🥇</span>
@@ -137,4 +146,57 @@
 {% endif %}
 
 </div>
+
+<style>
+.rank-row-highlight {
+  animation: rankHighlightPulse 1.6s ease-out 2;
+}
+@keyframes rankHighlightPulse {
+  0%   { background-color: rgba(240,192,64,.45); }
+  100% { background-color: transparent; }
+}
+</style>
+
+<script>
+let _buscarMatchesIdx = -1;
+let _buscarUltimaQuery = '';
+
+function buscarEnRanking(siguiente) {
+  const q = document.getElementById('buscarConcursante').value.trim().toLowerCase();
+  const info = document.getElementById('buscarConcursanteInfo');
+  const filas = Array.from(document.querySelectorAll('.rank-table tbody tr[data-nombre]'));
+
+  if (!q) {
+    info.textContent = '';
+    _buscarMatchesIdx = -1;
+    _buscarUltimaQuery = '';
+    return;
+  }
+
+  const matches = filas.filter(f => f.dataset.nombre.includes(q));
+
+  if (matches.length === 0) {
+    info.textContent = 'Sin resultados';
+    _buscarMatchesIdx = -1;
+    return;
+  }
+
+  if (q !== _buscarUltimaQuery) {
+    _buscarUltimaQuery = q;
+    _buscarMatchesIdx = 0;
+  } else if (siguiente) {
+    _buscarMatchesIdx = (_buscarMatchesIdx + 1) % matches.length;
+  }
+
+  const fila = matches[_buscarMatchesIdx] || matches[0];
+  fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  fila.classList.remove('rank-row-highlight');
+  void fila.offsetWidth; // reflow para reiniciar animación
+  fila.classList.add('rank-row-highlight');
+
+  info.textContent = matches.length > 1
+    ? `${_buscarMatchesIdx + 1} de ${matches.length} coincidencias — Enter para ir a la siguiente`
+    : '1 coincidencia';
+}
+</script>
 {% endblock %}

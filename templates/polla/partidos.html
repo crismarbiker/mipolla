@@ -17,6 +17,16 @@
   {% endif %}{% endfor %}
 </div>
 
+<!-- Ocultar jugados switch -->
+<div class="px-3 py-2 d-flex align-items-center gap-2" style="border-bottom:1px solid var(--border);">
+  <div class="form-check form-switch mb-0">
+    <input class="form-check-input" type="checkbox" id="switchOcultarJugados" onchange="toggleOcultarJugados()">
+    <label class="form-check-label" for="switchOcultarJugados" style="font-size:.8rem;color:var(--c-muted);">
+      Ocultar partidos jugados
+    </label>
+  </div>
+</div>
+
 <div class="px-3 py-3" id="partidos-container">
   {% for fase in fases %}
   {% if fase.partidos.all %}
@@ -25,6 +35,7 @@
 
     {% for partido in fase.partidos.all %}
     <div class="match-card mb-2 {% if fase.id_fase == 1 %}fase-grupos{% elif fase.id_fase == 2 %}fase-r32{% elif fase.id_fase == 3 %}fase-r16{% elif fase.id_fase == 4 %}fase-qf{% elif fase.id_fase == 5 or fase.id_fase == 6 %}fase-sf{% elif fase.id_fase == 7 %}fase-final{% endif %}"
+         data-jugado="{% if partido.jugado %}true{% else %}false{% endif %}"
          style="cursor:pointer;" onclick="verPronosticos({{ partido.id }})">
 
       <!-- Header -->
@@ -141,6 +152,21 @@ function filterFase(fase, btn) {
     s.style.display = (fase === 'all' || s.dataset.fase === fase) ? '' : 'none';
   });
 }
+
+function toggleOcultarJugados() {
+  const ocultar = document.getElementById('switchOcultarJugados').checked;
+  localStorage.setItem('mipolla_ocultar_jugados', ocultar ? '1' : '0');
+  document.querySelectorAll('.match-card[data-jugado="true"]').forEach(c => {
+    c.style.display = ocultar ? 'none' : '';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('mipolla_ocultar_jugados') === '1') {
+    document.getElementById('switchOcultarJugados').checked = true;
+    toggleOcultarJugados();
+  }
+});
 
 function verPronosticos(partidoId) {
   const url = pronosticosUrlTpl.replace('/0/', '/' + partidoId + '/');
