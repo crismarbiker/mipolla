@@ -105,6 +105,8 @@ class Partido(models.Model):
     jugado = models.BooleanField(default=False)
     # football-data.org match ID for automatic result fetching (optional)
     fd_match_id = models.IntegerField(null=True, blank=True, verbose_name='football-data.org ID')
+    correo_enviado = models.BooleanField(default=False,
+                                         help_text='Si ya se envió el correo de transparencia con los pronósticos al cierre de este partido')
 
     class Meta:
         ordering = ['fecha', 'id']
@@ -166,6 +168,8 @@ class TorneoConfig(models.Model):
                                      help_text='Número WhatsApp para enviar comprobante de pago')
     inscripciones_abiertas = models.BooleanField(default=True,
                                                   help_text='Si está desactivado, oculta el QR y la sección de pago en el landing')
+    correo_apertura_enviado = models.BooleanField(default=False,
+                                                   help_text='Si ya se envió el correo especial de apertura (jugadores, campeones y 1er partido)')
 
     class Meta:
         verbose_name = 'Configuración del torneo'
@@ -221,6 +225,8 @@ class PerfilUsuario(models.Model):
                                 related_name='pronosticantes_campeon')
     puntos_campeon = models.SmallIntegerField(default=0)
     telefono = models.CharField(max_length=20, blank=True, help_text='Formato internacional: 591XXXXXXXX')
+    recibir_correos = models.BooleanField(default=False,
+                                          help_text='Recibir por correo los pronósticos de todos al cierre de cada partido (transparencia)')
 
     class Meta:
         verbose_name = 'Perfil'

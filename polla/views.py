@@ -64,7 +64,7 @@ def custom_login(request):
 def custom_logout(request):
     logout(request)
     return redirect('login')
-from .forms import PerfilForm
+from .forms import PerfilForm, CorreoForm
 
 
 def _es_admin(user):
@@ -358,6 +358,21 @@ def pronosticos(request):
                 messages.success(request, f'{len(jugadores_validos)} jugador(es) seleccionado(s).')
             return redirect('polla:pronosticos')
 
+        if action == 'correo':
+            correo_form = CorreoForm(request.POST)
+            if correo_form.is_valid():
+                request.user.email = correo_form.cleaned_data['email']
+                request.user.save(update_fields=['email'])
+                perfil.recibir_correos = correo_form.cleaned_data['recibir_correos'] and bool(request.user.email)
+                perfil.save(update_fields=['recibir_correos'])
+                if perfil.recibir_correos:
+                    messages.success(request, '📧 Correo guardado — recibirás los pronósticos de transparencia.')
+                else:
+                    messages.success(request, '📧 Correo guardado.')
+            else:
+                messages.error(request, 'Correo inválido.')
+            return redirect('polla:pronosticos')
+
         if action == 'campeon':
             # Champion locks when first match starts (same as player selection)
             if torneo_iniciado():
@@ -408,6 +423,7 @@ def pronosticos(request):
 
     user_pronosticos = {p.partido_id: p for p in request.user.pronosticos.all()}
     perfil_form = PerfilForm(instance=perfil)
+    correo_form = CorreoForm(initial={'email': request.user.email, 'recibir_correos': perfil.recibir_correos})
 
     # All players grouped by country for the selection UI
     paises_con_jugadores = Pais.objects.prefetch_related('jugadores').order_by('grupo', 'nombre')
@@ -419,6 +435,7 @@ def pronosticos(request):
         'partidos': partidos_abiertos,
         'user_pronosticos': user_pronosticos,
         'perfil_form': perfil_form,
+        'correo_form': correo_form,
         'perfil': perfil,
         'seleccion_actual': seleccion_actual,
         'ids_seleccionados': ids_seleccionados,

@@ -37,3 +37,14 @@ class PerfilForm(forms.ModelForm):
         self.fields['campeon'].queryset = Pais.objects.all()
         self.fields['campeon'].empty_label = '-- Selecciona un campeón --'
         self.fields['campeon'].label = 'Campeón del Mundial'
+
+
+class CorreoForm(forms.Form):
+    email = forms.EmailField(
+        required=False, label='Correo electrónico',
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'tucorreo@ejemplo.com'}),
+    )
+    recibir_correos = forms.BooleanField(
+        required=False, label='Quiero recibir por correo los pronósticos de todos al cierre de cada partido',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )

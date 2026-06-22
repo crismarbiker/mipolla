@@ -20,6 +20,9 @@
   <button class="tab-pill" onclick="showTab('tab-campeon',this)">
     <i class="bi bi-trophy me-1"></i>Campeón
   </button>
+  <button class="tab-pill" onclick="showTab('tab-correo',this)">
+    <i class="bi bi-envelope me-1"></i>Correo
+  </button>
 </div>
 
 <!-- ============================================================
@@ -375,6 +378,44 @@
   </div>
   {% endif %}
   {% endif %}
+</div>
+
+<!-- ============================================================
+     TAB 4: Correo de transparencia
+     ============================================================ -->
+<div id="tab-correo" class="tab-pane d-none px-3 py-3">
+  <div class="card mb-3" style="background:rgba(13,30,53,.5) !important;border-color:rgba(240,192,64,.3) !important;">
+    <div class="card-body p-3">
+      <div class="d-flex align-items-center gap-2">
+        <span style="font-size:1.5rem;">📧</span>
+        <div>
+          <div class="fw-bold">Transparencia por correo</div>
+          <div class="text-muted small">
+            Si activas esto, te llegará un correo con los pronósticos de TODOS justo cuando cada partido inicia —
+            así queda demostrado que nadie cambió nada después.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="correo">
+    <div class="mb-3">
+      <label class="form-label small text-muted">{{ correo_form.email.label }}</label>
+      {{ correo_form.email }}
+    </div>
+    <div class="form-check mb-3">
+      {{ correo_form.recibir_correos }}
+      <label class="form-check-label small" for="id_recibir_correos">
+        {{ correo_form.recibir_correos.label }}
+      </label>
+    </div>
+    <button type="submit" class="btn btn-gold w-100 fw-bold">
+      <i class="bi bi-envelope-check me-2"></i>Guardar correo
+    </button>
+  </form>
 </div>
 
 {% endblock %}
