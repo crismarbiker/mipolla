@@ -966,9 +966,10 @@ def admin_resultados(request):
             Pais.objects.update(es_campeon=False)
             campeon.es_campeon = True
             campeon.save()
-            for perfil in PerfilUsuario.objects.filter(campeon=campeon):
-                perfil.puntos_campeon = 15
-                perfil.save()
+            # Idempotente: resetea a todos primero, así una corrección posterior
+            # del resultado de la Final no deja puntos de un campeón equivocado.
+            PerfilUsuario.objects.update(puntos_campeon=0)
+            PerfilUsuario.objects.filter(campeon=campeon).update(puntos_campeon=15)
 
         messages.success(request, f'Resultado guardado: {partido} {partido.resultado_str}')
         return redirect('polla:admin_resultados')
