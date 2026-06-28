@@ -894,15 +894,25 @@ def admin_resultados(request):
                     goles_local_calc += abs(cantidad)      # own goal → local
 
         # ── 2. Handle penalties (knockout rounds only) ──────────────────────
+        # hubo_penales es la única bandera que afecta el cálculo (bono predice_penales).
+        # penales_local/visitante son SOLO informativos (para mostrar "tiempo
+        # reglamentario") y son opcionales — dejarlos vacíos no afecta nada.
         hubo_penales = bool(request.POST.get('hubo_penales'))
         penales_local = None
         penales_visitante = None
         if hubo_penales:
-            try:
-                penales_local = int(request.POST.get('penales_local', 0))
-                penales_visitante = int(request.POST.get('penales_visitante', 0))
-            except (ValueError, TypeError):
-                hubo_penales = False
+            raw_pl = request.POST.get('penales_local', '').strip()
+            raw_pv = request.POST.get('penales_visitante', '').strip()
+            if raw_pl:
+                try:
+                    penales_local = int(raw_pl)
+                except ValueError:
+                    penales_local = None
+            if raw_pv:
+                try:
+                    penales_visitante = int(raw_pv)
+                except ValueError:
+                    penales_visitante = None
 
         # ── 3. Save match result ─────────────────────────────────────────────
         partido.goles_local = goles_local_calc
@@ -951,7 +961,7 @@ def admin_resultados(request):
         # ── 6. Final: set champion ───────────────────────────────────────────
         if partido.fase_id == 7:
             campeon = partido.pais_local if (
-                partido.goles_totales_local > partido.goles_totales_visitante
+                partido.goles_local > partido.goles_visitante
             ) else partido.pais_visitante
             Pais.objects.update(es_campeon=False)
             campeon.es_campeon = True

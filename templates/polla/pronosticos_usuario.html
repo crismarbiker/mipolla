@@ -73,9 +73,11 @@
           </td>
           <td class="left">
             {% if row.partido.jugado %}
-            <span style="font-weight:700;font-size:.88rem;">{{ row.partido.goles_local }}-{{ row.partido.goles_visitante }}</span>
             {% if row.partido.hubo_penales %}
+            <span style="font-weight:700;font-size:.88rem;">{{ row.partido.goles_reglamentarios_local }}-{{ row.partido.goles_reglamentarios_visitante }}</span>
             <span class="badge b-blue" style="font-size:.58rem;margin-left:.2rem;">pen. {{ row.partido.penales_local }}-{{ row.partido.penales_visitante }}</span>
+            {% else %}
+            <span style="font-weight:700;font-size:.88rem;">{{ row.partido.goles_local }}-{{ row.partido.goles_visitante }}</span>
             {% endif %}
             {% else %}
             <span style="color:#9aa3ae;font-size:.8rem;">Pendiente</span>

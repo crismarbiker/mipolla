@@ -130,9 +130,11 @@
           <span style="font-size:1.2rem;">{{ p.pais_visitante.emoji }}</span>
         </td>
         <td class="center" style="font-weight:900;color:#0D2B6E;font-size:1rem;">
-          {{ p.goles_local }}-{{ p.goles_visitante }}
           {% if p.hubo_penales %}
+          {{ p.goles_reglamentarios_local }}-{{ p.goles_reglamentarios_visitante }}
           <span class="badge b-blue" style="font-size:.55rem;margin-left:.2rem;">pen. {{ p.penales_local }}-{{ p.penales_visitante }}</span>
+          {% else %}
+          {{ p.goles_local }}-{{ p.goles_visitante }}
           {% endif %}
         </td>
         <td class="center">

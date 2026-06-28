@@ -136,13 +136,28 @@ class Partido(models.Model):
         return self.goles_visitante + (self.penales_visitante or 0)
 
     @property
+    def goles_reglamentarios_local(self):
+        """Informational only: goles_local ya es el total oficial (incluye penales si
+        se cargaron por jugador); esto resta el dato opcional de penales para mostrar
+        el tiempo reglamentario. Nunca se usa en cálculos de puntaje."""
+        if self.goles_local is None:
+            return None
+        return self.goles_local - (self.penales_local or 0)
+
+    @property
+    def goles_reglamentarios_visitante(self):
+        if self.goles_visitante is None:
+            return None
+        return self.goles_visitante - (self.penales_visitante or 0)
+
+    @property
     def resultado_str(self):
         if self.goles_local is None:
             return 'vs'
-        base = f"{self.goles_local} - {self.goles_visitante}"
         if self.hubo_penales:
-            return f"{base} (pen. {self.penales_local}-{self.penales_visitante})"
-        return base
+            return (f"{self.goles_reglamentarios_local} - {self.goles_reglamentarios_visitante} "
+                    f"(pen. {self.penales_local}-{self.penales_visitante})")
+        return f"{self.goles_local} - {self.goles_visitante}"
 
     def __str__(self):
         return f"{self.pais_local} vs {self.pais_visitante}"
@@ -335,8 +350,11 @@ class Pronostico(models.Model):
         if not p.jugado or p.goles_local is None:
             return {'ganador': 0, 'resultado': 0, 'penales': 0, 'total': 0}
 
-        real_gl = p.goles_totales_local
-        real_gv = p.goles_totales_visitante
+        # goles_local/goles_visitante ya son el total oficial (suma de goles por
+        # jugador, incluye penales si los hubo) — penales_local/visitante son solo
+        # informativos y NO se suman aquí.
+        real_gl = p.goles_local
+        real_gv = p.goles_visitante
 
         pts_ganador = 0
         pts_resultado = 0
